@@ -22,6 +22,22 @@
     --danger: #EE5D50;
     --danger-hover: #DC4A3D;
     --danger-rgb: 238, 93, 80;
+    /* Standard action button colors (text + border only) */
+    --action-import: #1E40AF;
+    --action-import-hover: #1E3A8A;
+    --action-import-rgb: 30, 64, 175;
+    --action-export: #FB923C;
+    --action-export-hover: #F97316;
+    --action-export-rgb: 251, 146, 60;
+    --action-add: #4ADE80;
+    --action-add-hover: #22C55E;
+    --action-add-rgb: 74, 222, 128;
+    --action-refresh: #047857;
+    --action-refresh-hover: #065F46;
+    --action-refresh-rgb: 4, 120, 87;
+    --action-manage: #6366F1;
+    --action-manage-hover: #4F46E5;
+    --action-manage-rgb: 99, 102, 241;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -31,7 +47,7 @@ html {
 }
 
 body {
-    font-family: 'Outfit', system-ui, sans-serif;
+    font-family: 'Outfit', 'Segoe UI', system-ui, sans-serif;
     background: #38BDF8;
     color: var(--text-main);
     display: flex;
@@ -281,11 +297,15 @@ body.rtl .sidebar { border-right: none; border-left: 1px solid var(--border-colo
     font-weight: 600;
     font-size: 0.92rem;
     cursor: pointer;
-    transition: var(--transition);
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
     display: inline-flex;
     align-items: center;
     gap: 8px;
     font-family: inherit;
+    line-height: 1.25;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
 }
 
 .btn-primary {
@@ -307,36 +327,45 @@ body.rtl .sidebar { border-right: none; border-left: 1px solid var(--border-colo
 }
 .btn-secondary:hover { background: #f1f5f9; }
 
-/* —— Standard semantic action buttons —— */
-.btn-add {
-    background: var(--success);
-    color: #fff;
-    border: 1px solid var(--success);
-    box-shadow: 0 4px 15px rgba(var(--success-rgb), 0.28);
+/* —— Standard semantic action buttons (outline: colored text + border only) —— */
+.btn-add,
+button[id^="btn-add"] {
+    background: #fff;
+    color: var(--action-add);
+    font-weight: 600;
+    border: 1px solid rgba(var(--action-add-rgb), 0.55);
+    box-shadow: none;
 }
-.btn-add:hover {
-    background: var(--success-hover);
-    border-color: var(--success-hover);
-    color: #fff;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 22px rgba(var(--success-rgb), 0.38);
+.btn-add:hover,
+button[id^="btn-add"]:hover {
+    color: var(--action-add-hover);
+    background: rgba(var(--action-add-rgb), 0.1);
+    border-color: var(--action-add);
+    box-shadow: 0 1px 3px rgba(var(--action-add-rgb), 0.12);
 }
-.btn-add:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-add:disabled,
+button[id^="btn-add"]:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-add .material-symbols-rounded,
+button[id^="btn-add"] .material-symbols-rounded {
+    color: inherit;
+}
 
 .btn-refresh,
 button[id^="btn-refresh"],
 button[id*="refresh-rates"] {
     background: #fff;
-    color: var(--success);
-    font-weight: 650;
-    border: 1px solid rgba(var(--success-rgb), 0.35);
+    color: var(--action-refresh);
+    font-weight: 600;
+    border: 1px solid rgba(var(--action-refresh-rgb), 0.45);
+    box-shadow: none;
 }
 .btn-refresh:hover,
 button[id^="btn-refresh"]:hover,
 button[id*="refresh-rates"]:hover {
-    color: var(--success-hover);
-    background: rgba(var(--success-rgb), 0.1);
-    border-color: var(--success);
+    color: var(--action-refresh-hover);
+    background: rgba(var(--action-refresh-rgb), 0.1);
+    border-color: var(--action-refresh);
+    box-shadow: 0 1px 3px rgba(var(--action-refresh-rgb), 0.12);
 }
 .btn-refresh .material-symbols-rounded,
 button[id^="btn-refresh"] .material-symbols-rounded,
@@ -357,55 +386,90 @@ button[id*="refresh-rates"] .material-symbols-rounded {
     box-shadow: 0 8px 22px rgba(var(--warning-rgb), 0.38);
 }
 
+.btn-manage,
+button[id*="manage-categories"],
+button[id*="manage-exp-cats"],
+button[id*="manage-drafts"] {
+    background: #fff;
+    color: var(--action-manage);
+    font-weight: 600;
+    border: 1px solid rgba(var(--action-manage-rgb), 0.5);
+    box-shadow: none;
+}
+.btn-manage:hover,
+button[id*="manage-categories"]:hover,
+button[id*="manage-exp-cats"]:hover,
+button[id*="manage-drafts"]:hover {
+    color: var(--action-manage-hover);
+    background: rgba(var(--action-manage-rgb), 0.1);
+    border-color: var(--action-manage);
+    box-shadow: 0 1px 3px rgba(var(--action-manage-rgb), 0.12);
+}
+.btn-manage .material-symbols-rounded,
+button[id*="manage-categories"] .material-symbols-rounded,
+button[id*="manage-exp-cats"] .material-symbols-rounded,
+button[id*="manage-drafts"] .material-symbols-rounded {
+    color: inherit;
+}
+
 .btn-delete,
 .btn-danger {
-    background: var(--danger);
-    color: #fff;
-    border: 1px solid var(--danger);
-    box-shadow: 0 4px 15px rgba(var(--danger-rgb), 0.22);
+    background: #fff;
+    color: var(--danger);
+    font-weight: 600;
+    border: 1px solid rgba(var(--danger-rgb), 0.45);
+    box-shadow: none;
 }
 .btn-delete:hover,
 .btn-danger:hover {
-    background: var(--danger-hover);
-    border-color: var(--danger-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 22px rgba(var(--danger-rgb), 0.32);
+    color: var(--danger-hover);
+    background: rgba(var(--danger-rgb), 0.1);
+    border-color: var(--danger);
+    box-shadow: 0 1px 3px rgba(var(--danger-rgb), 0.12);
+}
+.btn-delete .material-symbols-rounded,
+.btn-danger .material-symbols-rounded {
+    color: inherit;
 }
 
 button[id^="btn-export"],
 button[id$="-export"],
 button[id*="-export"],
 .btn-export {
-    color: #0EA5E9;
-    font-weight: 650;
-    border-color: rgba(202, 138, 4, 0.4);
+    color: var(--action-export);
+    font-weight: 600;
+    border: 1px solid rgba(var(--action-export-rgb), 0.55);
     background: #fff;
+    box-shadow: none;
 }
 button[id^="btn-export"]:hover,
 button[id$="-export"]:hover,
 button[id*="-export"]:hover,
 .btn-export:hover {
-    color: #0369A1;
-    background: rgba(250, 204, 21, 0.18);
-    border-color: #0EA5E9;
+    color: var(--action-export-hover);
+    background: rgba(var(--action-export-rgb), 0.12);
+    border-color: var(--action-export);
+    box-shadow: 0 1px 3px rgba(var(--action-export-rgb), 0.12);
 }
 
 button[id^="btn-import"],
 button[id$="-import"],
 button[id*="-import"],
 .btn-import {
-    color: #2563eb;
-    font-weight: 650;
-    border-color: rgba(37, 99, 235, 0.28);
+    color: var(--action-import);
+    font-weight: 600;
+    border: 1px solid rgba(var(--action-import-rgb), 0.45);
     background: #fff;
+    box-shadow: none;
 }
 button[id^="btn-import"]:hover,
 button[id$="-import"]:hover,
 button[id*="-import"]:hover,
 .btn-import:hover {
-    color: #1d4ed8;
-    background: rgba(37, 99, 235, 0.08);
-    border-color: #2563eb;
+    color: var(--action-import-hover);
+    background: rgba(var(--action-import-rgb), 0.1);
+    border-color: var(--action-import);
+    box-shadow: 0 1px 3px rgba(var(--action-import-rgb), 0.12);
 }
 
 button[id^="btn-export"] .material-symbols-rounded,
@@ -439,13 +503,13 @@ button[id*="-import"] .material-symbols-rounded,
     color: var(--primary-color);
 }
 .btn-icon-add {
-    color: var(--success);
-    border-color: rgba(var(--success-rgb), 0.35);
+    color: var(--action-add);
+    border-color: rgba(var(--action-add-rgb), 0.55);
 }
 .btn-icon-add:hover {
-    color: var(--success-hover);
-    border-color: var(--success);
-    background: rgba(var(--success-rgb), 0.1);
+    color: var(--action-add-hover);
+    border-color: var(--action-add);
+    background: rgba(var(--action-add-rgb), 0.1);
 }
 .btn-icon-edit {
     color: var(--warning-hover);
@@ -463,18 +527,18 @@ button[id*="-import"] .material-symbols-rounded,
 }
 .btn-icon-delete:hover,
 .btn-icon-danger:hover {
-    color: #fff;
+    color: var(--danger-hover);
     border-color: var(--danger);
-    background: var(--danger);
+    background: rgba(var(--danger-rgb), 0.1);
 }
 .btn-icon-refresh {
-    color: var(--success);
-    border-color: rgba(var(--success-rgb), 0.35);
+    color: var(--action-refresh);
+    border-color: rgba(var(--action-refresh-rgb), 0.45);
 }
 .btn-icon-refresh:hover {
-    color: var(--success-hover);
-    border-color: var(--success);
-    background: rgba(var(--success-rgb), 0.1);
+    color: var(--action-refresh-hover);
+    border-color: var(--action-refresh);
+    background: rgba(var(--action-refresh-rgb), 0.1);
 }
 .btn-icon-success {
     background: var(--success);

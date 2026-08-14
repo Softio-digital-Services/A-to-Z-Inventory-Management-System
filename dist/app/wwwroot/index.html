@@ -14,7 +14,7 @@
         <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
     </noscript>
-    <link rel="stylesheet" href="css/style.css?v=20260811a2z">
+    <link rel="stylesheet" href="css/style.css?v=20260815a2z">
     <style id="no-scale-build">
         /* Generic main: hide hardware scale dock (full scale UI is on the `scale` branch) */
         #scalePanel,
@@ -66,24 +66,32 @@
             margin-right: 0 !important;
             justify-content: flex-end !important;
             overflow-x: auto !important;
-            overflow-y: hidden !important;
+            overflow-y: visible !important;
+            padding-block: 2px !important;
             scrollbar-width: thin;
             -webkit-overflow-scrolling: touch;
         }
         #inventory .page-search-row .page-actions .btn {
-            height: 38px !important;
-            min-height: 38px !important;
-            padding: 0 10px !important;
-            font-size: 0.78rem !important;
-            gap: 4px !important;
+            height: 40px !important;
+            min-height: 40px !important;
+            padding: 0 12px !important;
+            font-size: 0.875rem !important;
+            font-weight: 500 !important;
+            line-height: 1.3 !important;
+            gap: 6px !important;
             border-radius: 10px !important;
             flex: 0 0 auto !important;
             white-space: nowrap !important;
+            font-family: 'Outfit', 'Segoe UI', system-ui, sans-serif !important;
+            -webkit-font-smoothing: antialiased !important;
+            text-rendering: optimizeLegibility !important;
         }
         #inventory .page-search-row .page-actions .btn .material-symbols-rounded {
-            font-size: 1.1rem !important;
-            width: 1.1rem !important;
-            height: 1.1rem !important;
+            font-size: 1.15rem !important;
+            width: 1.15rem !important;
+            height: 1.15rem !important;
+            flex-shrink: 0 !important;
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20 !important;
         }
         body.rtl #inventory .page-search-row .page-actions {
             justify-content: flex-start !important;
@@ -279,7 +287,7 @@
                     <div class="page-actions">
                         <button class="btn btn-refresh" id="btn-refresh-inventory"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
                         <button class="btn btn-add" id="btn-add-category" data-roles="admin"><span class="material-symbols-rounded">category</span><span data-i18n="add_category">Add Category</span></button>
-                        <button class="btn btn-secondary" id="btn-manage-categories" data-roles="admin"><span class="material-symbols-rounded">tune</span><span data-i18n="manage_categories">Manage Categories</span></button>
+                        <button class="btn btn-manage" id="btn-manage-categories" data-roles="admin"><span class="material-symbols-rounded">tune</span><span data-i18n="manage_categories">Manage Categories</span></button>
                         <button class="btn btn-secondary btn-import" id="btn-import-inventory" data-roles="admin"><span class="material-symbols-rounded">download</span><span data-i18n="import">Import</span></button>
                         <input type="file" id="inv-import-file" accept=".csv,text/csv" hidden>
                         <button class="btn btn-secondary btn-export" id="btn-export-inventory"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
@@ -565,7 +573,7 @@
             <section id="expenses" class="view-section">
                 <div class="page-header">
                     <div class="page-actions">
-                        <button class="btn btn-secondary" id="btn-manage-exp-cats" data-roles="admin"><span class="material-symbols-rounded">category</span><span data-i18n="manage_categories">Manage Categories</span></button>
+                        <button class="btn btn-manage" id="btn-manage-exp-cats" data-roles="admin"><span class="material-symbols-rounded">category</span><span data-i18n="manage_categories">Manage Categories</span></button>
                         <button class="btn btn-refresh" id="btn-refresh-expenses"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
                         <input type="file" id="exp-import-file" accept=".csv,text/csv" hidden>
                         <button class="btn btn-secondary btn-import" id="btn-import-expenses"><span class="material-symbols-rounded">download</span><span data-i18n="import">Import</span></button>
