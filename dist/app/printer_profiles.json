@@ -1,0 +1,10 @@
+[
+  {
+    "PrinterName": "Xprinter XP-365B",
+    "ReceiptProtocol": "auto",
+    "LabelProtocol": "auto",
+    "LabelWidthMm": 50,
+    "LabelHeightMm": 40,
+    "LabelGapMm": 3
+  }
+]

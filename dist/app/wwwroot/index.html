@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>a2z Tech</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript>
+        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+    </noscript>
+    <link rel="stylesheet" href="css/style.css?v=20260811a2z">
+    <style id="no-scale-build">
+        /* Generic main: hide hardware scale dock (full scale UI is on the `scale` branch) */
+        #scalePanel,
+        .pos-scale-box,
+        #btnScaleSettings,
+        .scale-gear { display: none !important; }
+    </style>
+    <style id="inv-toolbar-fix">
+        /* Inventory toolbar: one row, search never overlapped by actions */
+        #inventory .page-search-row {
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            gap: 0.75rem !important;
+            min-width: 0 !important;
+            overflow: visible !important;
+        }
+        #inventory .page-search-row .search-box {
+            flex: 0 0 148px !important;
+            width: 148px !important;
+            min-width: 148px !important;
+            max-width: 148px !important;
+            height: 38px !important;
+            padding: 0 12px !important;
+            flex-shrink: 0 !important;
+            position: relative !important;
+            z-index: 2 !important;
+            box-sizing: border-box !important;
+        }
+        #inventory .page-search-row .search-box .form-control {
+            padding: 8px 0 !important;
+            font-size: 0.875rem !important;
+            min-width: 0 !important;
+        }
+        #inventory .page-search-row .search-box .material-symbols-rounded {
+            font-size: 1.15rem !important;
+            flex-shrink: 0 !important;
+        }
+        #inventory .page-search-row .page-actions {
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            gap: 0.35rem !important;
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
+            width: auto !important;
+            max-width: none !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            justify-content: flex-end !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            scrollbar-width: thin;
+            -webkit-overflow-scrolling: touch;
+        }
+        #inventory .page-search-row .page-actions .btn {
+            height: 38px !important;
+            min-height: 38px !important;
+            padding: 0 10px !important;
+            font-size: 0.78rem !important;
+            gap: 4px !important;
+            border-radius: 10px !important;
+            flex: 0 0 auto !important;
+            white-space: nowrap !important;
+        }
+        #inventory .page-search-row .page-actions .btn .material-symbols-rounded {
+            font-size: 1.1rem !important;
+            width: 1.1rem !important;
+            height: 1.1rem !important;
+        }
+        body.rtl #inventory .page-search-row .page-actions {
+            justify-content: flex-start !important;
+        }
+        .sidebar .brand-wordmark.brand-wordmark-sm {
+            font-size: 1.35rem !important;
+            padding: 12px 16px !important;
+        }
+        .login-card .brand-wordmark {
+            font-size: 2rem !important;
+            padding: 18px 28px !important;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js" defer></script>
+</head>
+<body>
+    <header id="titlebar" class="titlebar">
+        <div class="titlebar-drag" id="titlebar-drag"></div>
+        <div class="titlebar-tools" id="titlebar-tools" hidden>
+            <button type="button" class="tb-btn" id="btn-notif" title="Notifications">
+                <span class="material-symbols-rounded tb-icon" aria-hidden="true">notifications</span>
+                <span class="tb-badge" id="notif-badge" hidden>0</span>
+            </button>
+            <button type="button" class="tb-btn" id="btn-lock" title="Lock" data-i18n-title="tool_lock">
+                <span class="material-symbols-rounded tb-icon" aria-hidden="true">lock</span>
+            </button>
+            <button type="button" class="tb-btn" id="btn-calc" title="Calculator" data-i18n-title="tool_calc">
+                <span class="material-symbols-rounded tb-icon" aria-hidden="true">calculate</span>
+            </button>
+            <button type="button" class="tb-btn" id="btn-backup" title="Backup" data-i18n-title="tool_backup">
+                <span class="material-symbols-rounded tb-icon" aria-hidden="true">cloud_upload</span>
+            </button>
+            <button type="button" class="tb-btn" id="btn-about" title="About" data-i18n-title="tool_about">
+                <span class="material-symbols-rounded tb-icon" aria-hidden="true">info</span>
+            </button>
+            <div class="tb-user" id="tb-user-chip">
+                <span class="material-symbols-rounded tb-icon" aria-hidden="true">person</span>
+                <span id="tb-user-name">—</span>
+            </div>
+        </div>
+        <div class="window-controls">
+            <button type="button" class="win-btn" id="win-min" title="Minimize"><span class="material-symbols-rounded">remove</span></button>
+            <button type="button" class="win-btn" id="win-max" title="Maximize"><span class="material-symbols-rounded" id="win-max-icon">crop_square</span></button>
+            <button type="button" class="win-btn win-close" id="win-close" title="Close"><span class="material-symbols-rounded" aria-hidden="true">close</span></button>
+        </div>
+    </header>
+
+    <div id="login-screen" class="login-wrapper">
+        <div class="login-card">
+            <div class="logo-container brand-hero">
+                <div class="brand-wordmark" aria-label="a2z Tech">a2z Tech</div>
+            </div>
+            <h2 data-i18n="login_title">Sign In</h2>
+            <p class="subtitle" data-i18n="login_subtitle">Inventory management portal</p>
+            <div id="login-error" class="error-box"></div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label data-i18n="username">Username</label>
+                    <input type="text" id="login-user" class="form-control" autocomplete="username" required>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="password">Password</label>
+                    <input type="password" id="login-pass" class="form-control" autocomplete="current-password" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;" data-i18n="login_btn">Sign In</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="app-container">
+        <aside class="sidebar">
+            <div class="logo-container brand-hero">
+                <div class="brand-wordmark brand-wordmark-sm" aria-label="a2z Tech">a2z Tech</div>
+            </div>
+            <nav class="nav-menu" id="nav-menu">
+                <a href="#" class="nav-item active" data-target="dashboard" data-roles="admin,staff,accountant">
+                    <span class="material-symbols-rounded nav-icon" aria-hidden="true">dashboard</span><span class="label" data-i18n="nav_dashboard">Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-target="inventory" data-roles="admin,staff,accountant">
+                    <span class="material-symbols-rounded nav-icon" aria-hidden="true">inventory_2</span><span class="label" data-i18n="nav_inventory">Inventory</span>
+                    <span class="nav-badge" id="badge-inventory" style="display:none;"></span>
+                </a>
+                <a href="#" class="nav-item" data-target="pos" data-roles="admin,staff">
+                    <span class="material-symbols-rounded nav-icon" aria-hidden="true">point_of_sale</span><span class="label" data-i18n="nav_pos">POS</span>
+                </a>
+                <a href="#" class="nav-item" data-target="sales" data-roles="admin,staff,accountant">
+                    <span class="material-symbols-rounded nav-icon" aria-hidden="true">shopping_cart</span><span class="label" data-i18n="nav_sales">Sales</span>
+                </a>
+                <a href="#" class="nav-item" data-target="reports" data-roles="admin,accountant">
+                    <span class="material-symbols-rounded nav-icon" aria-hidden="true">bar_chart</span><span class="label" data-i18n="nav_reports">Reports</span>
+                </a>
+                <a href="#" class="nav-item" data-target="history" data-roles="admin,accountant">
+                    <span class="material-symbols-rounded nav-icon" aria-hidden="true">history</span><span class="label" data-i18n="nav_history">History</span>
+                </a>
+                <a href="#" class="nav-item" data-target="quotations" data-roles="admin,accountant">
+                    <span class="material-symbols-rounded nav-icon" aria-hidden="true">request_quote</span><span class="label" data-i18n="nav_quotations">Quotations</span>
+                </a>
+                <a href="#" class="nav-item" data-target="customers" data-roles="admin,staff,accountant">
+                    <span class="material-symbols-rounded nav-icon" aria-hidden="true">group</span><span class="label" data-i18n="nav_customers">Customers</span>
+                </a>
+                <a href="#" class="nav-item" data-target="suppliers" data-roles="admin,staff,accountant">
+                    <span class="material-symbols-rounded nav-icon" aria-hidden="true">local_shipping</span><span class="label" data-i18n="nav_suppliers">Suppliers</span>
+                </a>
+                <a href="#" class="nav-item" data-target="expenses" data-roles="admin,accountant">
+                    <span class="material-symbols-rounded nav-icon" aria-hidden="true">payments</span><span class="label" data-i18n="nav_expenses">Expenses</span>
+                </a>
+                <a href="#" class="nav-item" data-target="currencies" data-roles="admin">
+                    <span class="material-symbols-rounded nav-icon" aria-hidden="true">currency_exchange</span><span class="label" data-i18n="nav_currencies">Currencies</span>
+                </a>
+                <a href="#" class="nav-item" data-target="barcodes" data-roles="admin,staff,accountant">
+                    <span class="material-symbols-rounded nav-icon" aria-hidden="true">qr_code_2</span><span class="label" data-i18n="nav_barcodes">Barcodes</span>
+                </a>
+                <a href="#" class="nav-item" data-target="users" data-roles="admin" id="nav-users">
+                    <span class="material-symbols-rounded nav-icon" aria-hidden="true">manage_accounts</span><span class="label" data-i18n="nav_users">Users</span>
+                </a>
+                <a href="#" class="nav-item" data-target="settings" data-roles="admin,staff,accountant">
+                    <span class="material-symbols-rounded nav-icon" aria-hidden="true">settings</span><span class="label" data-i18n="nav_settings">Settings</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button type="button" class="nav-item" id="btn-lang">
+                    <span class="material-symbols-rounded nav-icon" aria-hidden="true">language</span><span class="label" id="lang-label">???????</span>
+                </button>
+                <button type="button" class="nav-item" id="btn-logout">
+                    <span class="material-symbols-rounded nav-icon" aria-hidden="true">logout</span><span class="label" data-i18n="logout">Logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <section id="dashboard" class="view-section active">
+                <div class="page-header">
+                    <div class="page-actions">
+                        <button class="btn btn-refresh" id="btn-refresh-dashboard"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                    </div>
+                </div>
+                <div class="dash-top-grid">
+                    <div class="stats-grid" id="stats-grid"></div>
+                    <div class="card dash-connect-card" id="dash-connect-card">
+                        <div class="dash-connect-copy">
+                            <h3 data-i18n="scan_to_connect">Scan to Connect</h3>
+                            <p class="dash-connect-hint" data-i18n="scan_to_connect_hint">Same Wi-Fi — open the full a2z Tech app on phone or tablet.</p>
+                            <div class="dash-connect-url-row">
+                                <a class="dash-connect-url" id="dash-connect-url" href="#" target="_blank" rel="noopener">—</a>
+                                <button type="button" class="btn btn-secondary btn-sm" id="btn-copy-connect-url" data-i18n="copy_url">Copy URL</button>
+                            </div>
+                        </div>
+                        <div class="dash-connect-qr-wrap">
+                            <img id="dash-connect-qr" class="dash-connect-qr" alt="Connect QR code" width="120" height="120">
+                        </div>
+                    </div>
+                </div>
+                <div class="dash-tables-grid">
+                    <div class="card dash-mini-card">
+                        <h3 data-i18n="best_selling">Best Selling Products</h3>
+                        <div class="table-wrapper">
+                            <table class="dash-mini-table">
+                                <thead><tr>
+                                    <th data-i18n="col_name">Name</th>
+                                    <th data-i18n="col_qty">Qty</th>
+                                    <th data-i18n="col_sales">Sales</th>
+                                </tr></thead>
+                                <tbody id="dash-top-products-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card dash-mini-card">
+                        <h3 data-i18n="top_categories">Top Categories</h3>
+                        <div class="table-wrapper">
+                            <table class="dash-mini-table">
+                                <thead><tr>
+                                    <th data-i18n="col_category">Category</th>
+                                    <th data-i18n="col_qty">Qty</th>
+                                    <th data-i18n="col_sales">Sales</th>
+                                </tr></thead>
+                                <tbody id="dash-top-categories-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="card"><h3 style="margin-bottom:1rem;" data-i18n="recent_sales">Recent Sales</h3>
+                    <div class="table-wrapper"><table><thead><tr>
+                        <th data-i18n="col_order">Order</th><th data-i18n="col_date">Date</th>
+                        <th data-i18n="col_customer">Customer</th><th data-i18n="col_total">Total</th>
+                    </tr></thead><tbody id="dash-sales-body"></tbody></table></div>
+                </div>
+            </section>
+
+            <section id="inventory" class="view-section">
+                <div class="page-search-row">
+                    <div class="search-box"><span class="material-symbols-rounded">search</span>
+                        <input type="text" id="inv-search" class="form-control" data-i18n-ph="search_ph" placeholder="Search..."></div>
+                    <div class="page-actions">
+                        <button class="btn btn-refresh" id="btn-refresh-inventory"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                        <button class="btn btn-add" id="btn-add-category" data-roles="admin"><span class="material-symbols-rounded">category</span><span data-i18n="add_category">Add Category</span></button>
+                        <button class="btn btn-secondary" id="btn-manage-categories" data-roles="admin"><span class="material-symbols-rounded">tune</span><span data-i18n="manage_categories">Manage Categories</span></button>
+                        <button class="btn btn-secondary btn-import" id="btn-import-inventory" data-roles="admin"><span class="material-symbols-rounded">download</span><span data-i18n="import">Import</span></button>
+                        <input type="file" id="inv-import-file" accept=".csv,text/csv" hidden>
+                        <button class="btn btn-secondary btn-export" id="btn-export-inventory"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
+                        <button class="btn btn-delete" id="btn-bulk-delete-inventory" data-roles="admin" hidden><span class="material-symbols-rounded">delete_sweep</span><span data-i18n="bulk_delete">Bulk Delete</span></button>
+                        <button class="btn btn-add" id="btn-add-product" data-roles="admin"><span class="material-symbols-rounded">add</span><span data-i18n="add_product">Add Product</span></button>
+                    </div>
+                </div>
+                <div class="filter-bar inv-toolbar-row">
+                    <div class="cat-pills" id="inv-cats"></div>
+                    <div class="inv-view-controls">
+                        <select id="inv-filter" class="form-control inv-filter-select">
+                            <option value="all" data-i18n="filter_all">All</option>
+                            <option value="low" data-i18n="filter_low_stock">Low Stock</option>
+                            <option value="active" data-i18n="filter_active">Active Only</option>
+                        </select>
+                        <div class="inv-view-toggle">
+                            <button type="button" class="btn btn-secondary btn-sm inv-view-btn active" id="btn-inv-table" title="Table"><span class="material-symbols-rounded">table_rows</span></button>
+                            <button type="button" class="btn btn-secondary btn-sm inv-view-btn" id="btn-inv-cards" title="Cards"><span class="material-symbols-rounded">grid_view</span></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card table-wrapper" id="inv-table-wrap"><table><thead><tr>
+                    <th class="inv-check-col"><input type="checkbox" id="inv-select-all" title="Select all"></th>
+                    <th data-i18n="col_image">Image</th><th data-i18n="col_name">Name</th><th data-i18n="col_sku">SKU</th>
+                    <th data-i18n="col_barcode">Barcode</th><th data-i18n="col_category">Category</th>
+                    <th data-i18n="col_price">Price</th><th data-i18n="col_stock">Stock</th>
+                    <th data-i18n="col_min_stock">Min Stock</th><th data-i18n="col_location">Location</th>
+                    <th data-i18n="col_status">Status</th><th data-i18n="col_actions">Actions</th>
+                </tr></thead><tbody id="inv-body"></tbody></table></div>
+                <div class="inv-layout" id="inv-cards" hidden></div>
+            </section>
+
+            <section id="pos" class="view-section">
+                <div class="pos-layout">
+                    <div class="pos-left">
+                        <div class="page-search-row">
+                            <div class="search-box">
+                                <span class="material-symbols-rounded">search</span>
+                                <input type="text" id="pos-search" class="form-control" data-i18n-ph="search_ph" placeholder="Search...">
+                            </div>
+                            <div class="page-actions">
+                                <button type="button" class="btn btn-secondary" id="btn-manage-drafts" data-i18n="manage_drafts">Manage Drafts</button>
+                                <button type="button" class="btn btn-add" id="btn-add-shipping" data-i18n="add_shipping">Add Shipping Details</button>
+                            </div>
+                        </div>
+                        <div class="pos-stats" id="pos-stats">
+                            <div class="pos-stat-card">
+                                <div class="pos-stat-text">
+                                    <div class="label" data-i18n="pos_orders">Orders</div>
+                                    <div class="value" id="pos-stat-orders">0</div>
+                                </div>
+                                <div class="pos-stat-icon gold"><span class="material-symbols-rounded">point_of_sale</span></div>
+                            </div>
+                            <div class="pos-stat-card">
+                                <div class="pos-stat-text">
+                                    <div class="label" data-i18n="pos_sales">Sales</div>
+                                    <div class="value" id="pos-stat-sales">$0</div>
+                                </div>
+                                <div class="pos-stat-icon teal"><span class="material-symbols-rounded">monitoring</span></div>
+                            </div>
+                            <div class="pos-stat-card">
+                                <div class="pos-stat-text">
+                                    <div class="label" data-i18n="pos_pending">Pending</div>
+                                    <div class="value" id="pos-stat-pending">0</div>
+                                </div>
+                                <div class="pos-stat-icon orange"><span class="material-symbols-rounded">shopping_cart</span></div>
+                            </div>
+                        </div>
+                        <div class="pos-menu-head">
+                            <h3 data-i18n="pos_menu">Menu</h3>
+                            <div class="pos-cat-nav">
+                                <button type="button" class="pos-cat-nav-btn" id="pos-cat-prev" aria-label="Previous">‹</button>
+                                <button type="button" class="pos-cat-nav-btn" id="pos-cat-next" aria-label="Next">›</button>
+                            </div>
+                        </div>
+                        <div class="pos-cat-strip" id="pos-cats"></div>
+                        <div class="pos-products" id="pos-products"></div>
+                    </div>
+                    <aside class="cart-section pos-order-panel">
+                        <div class="pos-order-title-row">
+                            <h2 data-i18n="new_order">New Order</h2>
+                            <button type="button" class="btn btn-secondary btn-sm" id="btn-clear-cart" data-i18n="clear">Clear</button>
+                        </div>
+                        <div class="pos-order-box pos-customer-box">
+                            <div class="pos-customer-row">
+                                <select id="pos-customer" class="form-control" aria-label="Customer">
+                                    <option value="" data-i18n="walk_in_customer">Walk-in Customer</option>
+                                </select>
+                                <button type="button" class="btn-pos-add-cust" id="btn-pos-add-customer" title="Add Customer">
+                                    <span class="material-symbols-rounded">add</span>
+                                </button>
+                            </div>
+                            <div id="pos-customer-debt" class="pos-customer-debt" hidden></div>
+                        </div>
+                        <div class="pos-order-box pos-cart-box">
+                            <div class="cart-items" id="cart-items"></div>
+                        </div>
+                        <div class="pos-order-footer">
+                            <div class="pos-order-box pos-totals-box">
+                                <div class="cart-summary pos-totals">
+                                    <div class="summary-row">
+                                        <span class="pos-sum-label" data-i18n="subtotal">Subtotal</span>
+                                        <span class="pos-sum-mid" aria-hidden="true"></span>
+                                        <strong class="pos-sum-val" id="cart-subtotal">$0.00</strong>
+                                    </div>
+                                    <div class="summary-row summary-opt">
+                                        <label class="pos-check pos-sum-label"><input type="checkbox" id="pos-vat"> <span data-i18n="vat_label">VAT (11%)</span></label>
+                                        <span class="pos-sum-mid" aria-hidden="true"></span>
+                                        <strong class="pos-sum-val" id="cart-vat">$0.00</strong>
+                                    </div>
+                                    <div class="summary-row summary-opt">
+                                        <label class="pos-check pos-sum-label"><input type="checkbox" id="pos-ship"> <span data-i18n="shipping">Shipping</span></label>
+                                        <span class="pos-sum-mid">
+                                            <span class="pos-amount-wrap" id="pos-ship-wrap" hidden>
+                                                <input type="number" class="form-control pos-amount" id="pos-ship-amt" min="0" step="0.01" value="0">
+                                            </span>
+                                        </span>
+                                        <strong class="pos-sum-val" id="cart-ship">$0.00</strong>
+                                    </div>
+                                    <div class="summary-row summary-opt">
+                                        <label class="pos-check pos-sum-label"><input type="checkbox" id="pos-disc"> <span data-i18n="discount">Discount</span></label>
+                                        <span class="pos-sum-mid">
+                                            <span class="pos-amount-wrap" id="pos-disc-wrap" hidden>
+                                                <input type="number" class="form-control pos-amount" id="pos-disc-amt" min="0" step="0.01" value="0">
+                                            </span>
+                                        </span>
+                                        <strong class="pos-sum-val" id="cart-disc">$0.00</strong>
+                                    </div>
+                                    <div class="summary-row total">
+                                        <span class="pos-sum-label" data-i18n="total_payable">Total Payable</span>
+                                        <span class="pos-sum-mid" aria-hidden="true"></span>
+                                        <span class="pos-sum-val pos-total-edit">
+                                            <span class="pos-money-sym" id="cart-total-sym">$</span>
+                                            <input type="text" inputmode="decimal" class="pos-total-input" id="pos-total-amt" value="0.00" aria-label="Total Payable" autocomplete="off">
+                                        </span>
+                                    </div>
+                                    <div class="pos-currency-row">
+                                        <label data-i18n="currency">Currency</label>
+                                        <select id="pos-currency" class="form-control"></select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="pos-actions">
+                                <div class="pos-actions-grid">
+                                    <button type="button" class="btn-pos btn-pos-return" id="btn-pos-return" data-i18n="return_items" data-i18n-title="return_from_sale_hint">Return</button>
+                                    <button type="button" class="btn-pos btn-pos-draft" id="btn-draft" data-i18n="save_draft">Save Draft</button>
+                                    <button type="button" class="btn-pos btn-pos-quote" id="btn-quote" data-i18n="quotation">Quotation</button>
+                                    <button type="button" class="btn-pos btn-pos-bill" id="btn-bill" data-i18n="customer_bill" data-i18n-title="pay_later_hint" title="Sell now, collect payment later">Pay Later</button>
+                                </div>
+                                <div class="pos-actions-footer">
+                                    <button type="button" class="btn-pos btn-pos-print" id="btn-pos-print" data-i18n="print">Print</button>
+                                    <button type="button" class="btn-pos btn-pos-place" id="btn-checkout" data-i18n="place_order">Pay Now</button>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            </section>
+
+            <section id="sales" class="view-section">
+                <div class="page-header">
+                    <div class="page-actions">
+                        <button class="btn btn-refresh" id="btn-refresh-sales"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                        <input type="file" id="sales-import-file" accept=".csv,text/csv" hidden>
+                        <button class="btn btn-secondary btn-import" id="btn-import-sales"><span class="material-symbols-rounded">download</span><span data-i18n="import">Import</span></button>
+                        <button class="btn btn-secondary btn-export" id="btn-export-sales"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
+                    </div>
+                </div>
+                <div class="card table-wrapper"><table><thead><tr>
+                    <th data-i18n="col_order">Order</th><th data-i18n="col_date">Date</th>
+                    <th data-i18n="col_customer">Customer</th><th data-i18n="col_total">Total</th>
+                    <th data-i18n="col_payment">Payment</th><th data-i18n="col_actions">Actions</th>
+                </tr></thead><tbody id="sales-body"></tbody></table></div>
+            </section>
+
+            <section id="reports" class="view-section">
+                <div class="page-header report-page-header">
+                    <div class="report-filters">
+                        <select id="report-preset" class="form-control report-filter-control" aria-label="Preset">
+                            <option value="Daily" data-i18n="preset_daily">Daily</option>
+                            <option value="Weekly" data-i18n="preset_weekly">Weekly</option>
+                            <option value="Monthly" selected data-i18n="preset_monthly">Monthly</option>
+                            <option value="Yearly" data-i18n="preset_yearly">Yearly</option>
+                            <option value="Custom" data-i18n="preset_custom">Custom</option>
+                        </select>
+                        <label class="report-date-field">
+                            <span data-i18n="date_from">From</span>
+                            <input type="date" id="report-from" class="form-control report-filter-control">
+                        </label>
+                        <label class="report-date-field">
+                            <span data-i18n="date_to">To</span>
+                            <input type="date" id="report-to" class="form-control report-filter-control">
+                        </label>
+                    </div>
+                    <div class="page-actions report-actions">
+                        <button class="btn btn-refresh" id="btn-refresh-reports"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                        <input type="file" id="reports-import-file" accept=".csv,text/csv" hidden>
+                        <button class="btn btn-secondary btn-import" id="btn-import-reports"><span class="material-symbols-rounded">download</span><span data-i18n="import">Import</span></button>
+                        <button class="btn btn-secondary btn-export" id="btn-export-reports"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
+                    </div>
+                </div>
+                <div class="stats-grid" id="report-stats"></div>
+                <div class="card"><h3 style="margin-bottom:1rem;" data-i18n="top_products">Top Products</h3>
+                    <div class="table-wrapper"><table><thead><tr>
+                        <th data-i18n="col_name">Name</th><th data-i18n="col_qty">Qty</th>
+                        <th data-i18n="col_sales">Sales</th><th data-i18n="col_profit">Profit</th>
+                    </tr></thead><tbody id="report-top-body"></tbody></table></div>
+                </div>
+            </section>
+
+            <section id="history" class="view-section">
+                <div class="page-header">
+                    <div class="page-actions">
+                        <select id="history-kind" class="form-control" style="width:auto;">
+                            <option value="all" data-i18n="filter_all">All</option>
+                            <option value="pay_later" data-i18n="customer_bill">Pay Later</option>
+                            <option value="orders" data-i18n="nav_sales">Orders</option>
+                            <option value="inventory" data-i18n="nav_inventory">Inventory</option>
+                            <option value="customers" data-i18n="nav_customers">Customers</option>
+                            <option value="suppliers" data-i18n="nav_suppliers">Suppliers</option>
+                            <option value="quotations" data-i18n="nav_quotations">Quotations</option>
+                        </select>
+                        <button class="btn btn-refresh" id="btn-refresh-history"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                        <input type="file" id="history-import-file" accept=".csv,text/csv" hidden>
+                        <button class="btn btn-secondary btn-import" id="btn-import-history"><span class="material-symbols-rounded">download</span><span data-i18n="import">Import</span></button>
+                        <button class="btn btn-secondary btn-export" id="btn-export-history"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
+                    </div>
+                </div>
+                <div class="card table-wrapper"><table><thead id="history-head"></thead><tbody id="history-body"></tbody></table></div>
+            </section>
+
+            <section id="quotations" class="view-section">
+                <div class="page-header">
+                    <div class="page-actions">
+                        <button class="btn btn-refresh" id="btn-refresh-quotations"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                    </div>
+                </div>
+                <div class="card table-wrapper"><table><thead><tr>
+                    <th data-i18n="col_order">Order</th><th data-i18n="col_date">Date</th>
+                    <th data-i18n="col_customer">Customer</th><th data-i18n="col_total">Total</th><th data-i18n="col_actions">Actions</th>
+                </tr></thead><tbody id="quot-body"></tbody></table></div>
+            </section>
+
+            <section id="customers" class="view-section">
+                <div class="page-search-row">
+                    <div class="search-box"><span class="material-symbols-rounded">search</span>
+                        <input type="text" id="cust-search" class="form-control" data-i18n-ph="search_ph" placeholder="Search..."></div>
+                    <div class="page-actions">
+                        <button class="btn btn-secondary" id="btn-filter-debt" data-i18n="filter_with_debt">With debt</button>
+                        <button class="btn btn-refresh" id="btn-refresh-customers"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                        <input type="file" id="cust-import-file" accept=".csv,text/csv" hidden>
+                        <button class="btn btn-secondary btn-import" id="btn-import-customers"><span class="material-symbols-rounded">download</span><span data-i18n="import">Import</span></button>
+                        <button class="btn btn-secondary btn-export" id="btn-export-customers"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
+                        <button class="btn btn-add" id="btn-add-customer"><span class="material-symbols-rounded">add</span><span data-i18n="add_customer">Add Customer</span></button>
+                    </div>
+                </div>
+                <div class="card table-wrapper"><table><thead><tr>
+                    <th data-i18n="col_name">Name</th><th data-i18n="col_phone">Phone</th>
+                    <th data-i18n="col_email">Email</th><th data-i18n="col_balance">Balance</th><th data-i18n="col_type">Type</th>
+                    <th data-i18n="col_actions">Actions</th>
+                </tr></thead><tbody id="cust-body"></tbody></table></div>
+            </section>
+
+            <section id="suppliers" class="view-section">
+                <div class="page-search-row">
+                    <div class="search-box"><span class="material-symbols-rounded">search</span>
+                        <input type="text" id="supp-search" class="form-control" data-i18n-ph="search_ph" placeholder="Search..."></div>
+                    <div class="page-actions">
+                        <button class="btn btn-refresh" id="btn-refresh-suppliers"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                        <input type="file" id="supp-import-file" accept=".csv,text/csv" hidden>
+                        <button class="btn btn-secondary btn-import" id="btn-import-suppliers"><span class="material-symbols-rounded">download</span><span data-i18n="import">Import</span></button>
+                        <button class="btn btn-secondary btn-export" id="btn-export-suppliers"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
+                        <button class="btn btn-add" id="btn-add-supplier"><span class="material-symbols-rounded">add</span><span data-i18n="add_supplier">Add Supplier</span></button>
+                    </div>
+                </div>
+                <div class="card table-wrapper"><table><thead><tr>
+                    <th data-i18n="col_name">Name</th><th data-i18n="col_contact">Contact</th>
+                    <th data-i18n="col_phone">Phone</th><th data-i18n="col_email">Email</th>
+                    <th data-i18n="col_balance">Balance</th><th data-i18n="col_actions">Actions</th>
+                </tr></thead><tbody id="supp-body"></tbody></table></div>
+            </section>
+
+            <section id="expenses" class="view-section">
+                <div class="page-header">
+                    <div class="page-actions">
+                        <button class="btn btn-secondary" id="btn-manage-exp-cats" data-roles="admin"><span class="material-symbols-rounded">category</span><span data-i18n="manage_categories">Manage Categories</span></button>
+                        <button class="btn btn-refresh" id="btn-refresh-expenses"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                        <input type="file" id="exp-import-file" accept=".csv,text/csv" hidden>
+                        <button class="btn btn-secondary btn-import" id="btn-import-expenses"><span class="material-symbols-rounded">download</span><span data-i18n="import">Import</span></button>
+                        <button class="btn btn-secondary btn-export" id="btn-export-expenses"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
+                        <button class="btn btn-add" id="btn-add-expense"><span class="material-symbols-rounded">add</span><span data-i18n="add_expense">Add Expense</span></button>
+                    </div>
+                </div>
+                <div class="card table-wrapper"><table><thead><tr>
+                    <th data-i18n="col_date">Date</th><th data-i18n="col_category">Category</th>
+                    <th data-i18n="col_amount">Amount</th><th data-i18n="col_desc">Description</th>
+                    <th data-i18n="col_status">Status</th><th data-i18n="col_actions">Actions</th>
+                </tr></thead><tbody id="exp-body"></tbody></table></div>
+            </section>
+
+            <section id="currencies" class="view-section">
+                <div class="page-header">
+                    <div class="page-actions">
+                        <button class="btn btn-refresh" id="btn-refresh-rates"><span class="material-symbols-rounded">sync</span><span data-i18n="refresh_rates">Refresh Rates</span></button>
+                        <button class="btn btn-add" id="btn-add-currency"><span class="material-symbols-rounded">add</span><span data-i18n="add_currency">Add Currency</span></button>
+                    </div>
+                </div>
+                <div class="card table-wrapper"><table><thead><tr>
+                    <th data-i18n="col_code">Code</th><th data-i18n="col_name">Name</th>
+                    <th data-i18n="col_symbol">Symbol</th><th data-i18n="col_rate">Rate</th>
+                    <th data-i18n="col_actions">Actions</th>
+                </tr></thead><tbody id="cur-body"></tbody></table></div>
+            </section>
+
+            <section id="barcodes" class="view-section">
+                <div class="page-search-row">
+                    <div class="search-box"><span class="material-symbols-rounded">search</span>
+                        <input type="text" id="bar-search" class="form-control" data-i18n-ph="search_ph" placeholder="Search..."></div>
+                    <div class="page-actions">
+                        <label class="bar-select-all-label" title="Select all">
+                            <input type="checkbox" id="bar-select-all">
+                            <span data-i18n="select_all">Select all</span>
+                        </label>
+                        <button class="btn btn-refresh" id="btn-refresh-barcodes"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                        <button class="btn btn-primary" id="btn-print-barcodes"><span class="material-symbols-rounded">print</span><span data-i18n="print">Print</span></button>
+                    </div>
+                </div>
+                <div id="barcodes-grid" class="barcodes-grid"></div>
+            </section>
+
+            <section id="users" class="view-section">
+                <div class="page-header">
+                    <div class="page-actions">
+                        <button class="btn btn-refresh" id="btn-refresh-users"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                        <button class="btn btn-add" id="btn-add-user"><span class="material-symbols-rounded">add</span><span data-i18n="add_user">Add User</span></button>
+                    </div>
+                </div>
+                <div class="card table-wrapper"><table><thead><tr>
+                    <th data-i18n="username">Username</th><th data-i18n="col_name">Name</th><th data-i18n="col_role">Role</th>
+                    <th data-i18n="col_actions">Actions</th>
+                </tr></thead><tbody id="users-body"></tbody></table></div>
+            </section>
+
+            <section id="settings" class="view-section">
+                <div class="card" style="max-width:560px;">
+                    <div class="page-header" style="margin-bottom:1rem;">
+                        <h3 style="margin:0;" data-i18n="license_info">License</h3>
+                        <button type="button" class="btn btn-primary" id="btn-activate-license">
+                            <span class="material-symbols-rounded">vpn_key</span>
+                            <span data-i18n="activate_license">Activate License</span>
+                        </button>
+                    </div>
+                    <div id="license-info" class="empty-state">—</div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="product-modal">
+        <div class="modal modal-lg product-modal">
+            <div class="modal-header"><h2 id="product-modal-title" data-i18n="add_product">Add Product</h2>
+                <button class="close-btn" data-close="product-modal"><span class="material-symbols-rounded">close</span></button></div>
+            <form id="product-form">
+                <input type="hidden" id="p-id">
+                <input type="hidden" id="p-image">
+                <div class="product-form-grid">
+                    <div class="product-form-left">
+                        <div class="p-image-box">
+                            <div class="p-image-frame" id="p-image-frame">
+                                <img id="p-image-preview" class="p-image-preview" src="" alt="" hidden>
+                                <div id="p-image-placeholder" class="p-image-placeholder"><span class="material-symbols-rounded">image</span></div>
+                                <button type="button" class="p-image-remove" id="btn-p-remove-image" title="Remove image" hidden aria-label="Remove image">
+                                    <span class="material-symbols-rounded">close</span>
+                                </button>
+                            </div>
+                            <input type="file" id="p-image-file" accept="image/*" hidden>
+                            <div class="p-image-actions" id="p-image-actions">
+                                <button type="button" class="btn btn-secondary btn-sm" id="btn-p-upload" data-i18n="upload_image">Upload Image</button>
+                                <button type="button" class="btn btn-secondary btn-sm" id="btn-p-change-image" data-i18n="change_image" hidden>Change</button>
+                                <button type="button" class="btn btn-danger btn-sm" id="btn-p-clear-image" data-i18n="remove_image" hidden>Remove</button>
+                            </div>
+                        </div>
+                        <fieldset class="p-fieldset">
+                            <legend data-i18n="item_type">Type</legend>
+                            <label class="p-radio"><input type="radio" name="p-type" value="Product" checked> <span data-i18n="type_product">Product</span></label>
+                            <label class="p-radio"><input type="radio" name="p-type" value="Service"> <span data-i18n="type_service">Service</span></label>
+                        </fieldset>
+                        <fieldset class="p-fieldset">
+                            <legend data-i18n="settings">Settings</legend>
+                            <label class="p-check"><input type="checkbox" id="p-sales" checked> <span data-i18n="sales_item">Sales item</span></label>
+                            <label class="p-check"><input type="checkbox" id="p-purchase"> <span data-i18n="purchase_item">Purchase item</span></label>
+                            <label class="p-check"><input type="checkbox" id="p-inactive"> <span data-i18n="inactive">Inactive</span></label>
+                        </fieldset>
+                        <div class="form-group">
+                            <label data-i18n="tax_rate">Tax Rate</label>
+                            <select class="form-control" id="p-tax">
+                                <option value="0">0%</option>
+                                <option value="5">5%</option>
+                                <option value="15">15%</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="col_category">Category</label>
+                            <select class="form-control" id="p-category"></select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="expiry_date">Expiry Date</label>
+                            <input type="date" class="form-control" id="p-expiry">
+                        </div>
+                    </div>
+                    <div class="product-form-right">
+                        <div class="form-group"><label data-i18n="col_name">Name</label><input class="form-control" id="p-name" required></div>
+                        <div class="form-group"><label data-i18n="col_desc">Description</label><textarea class="form-control" id="p-desc" rows="2"></textarea></div>
+                        <div class="form-row">
+                            <div class="form-group flex-grow"><label data-i18n="col_sku">SKU</label><input class="form-control" id="p-sku"></div>
+                            <div class="form-group p-inline-btn"><label>&nbsp;</label><button type="button" class="btn btn-secondary btn-sm" id="btn-p-auto-sku" data-i18n="auto_sku">Auto</button></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group flex-grow"><label data-i18n="col_barcode">Barcode</label><input class="form-control" id="p-barcode"></div>
+                            <div class="form-group p-inline-btn"><label>&nbsp;</label><button type="button" class="btn btn-secondary btn-sm" id="btn-p-scan" data-i18n="scan">Scan</button></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label data-i18n="batch_no">Batch No.</label><input class="form-control" id="p-batch"></div>
+                            <div class="form-group"><label data-i18n="col_location">Location</label><input class="form-control" id="p-location"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label data-i18n="shelf">Shelf</label><input class="form-control" id="p-shelf"></div>
+                            <div class="form-group" id="p-uom-group">
+                                <label data-i18n="uom">Unit of Measure</label>
+                                <div class="p-uom-row">
+                                    <select class="form-control" id="p-uom">
+                                        <option value="">—</option>
+                                        <option value="g">g</option>
+                                        <option value="kg">kg</option>
+                                        <option value="pcs">pcs</option>
+                                        <option value="pack">pack</option>
+                                        <option value="box">box</option>
+                                        <option value="meter">meter</option>
+                                        <option value="liter">liter</option>
+                                    </select>
+                                    <button type="button" class="btn btn-add btn-sm p-uom-add" id="btn-p-add-uom" title="Add unit" data-i18n-title="add_uom">+</button>
+                                </div>
+                            </div>
+                        </div>
+                        <fieldset class="p-fieldset p-stock-fieldset">
+                            <legend data-i18n="stock_control">Stock control</legend>
+                            <label class="p-check"><input type="checkbox" id="p-track-stock" checked> <span data-i18n="track_stock">Track stock</span></label>
+                            <div class="form-row">
+                                <div class="form-group"><label id="p-stock-label" data-i18n="col_stock">Stock</label><input class="form-control" id="p-stock" type="number" min="0" value="0"><small class="form-hint" id="p-stock-hint" hidden></small></div>
+                                <div class="form-group"><label id="p-min-stock-label" data-i18n="low_level">Low level</label><input class="form-control" id="p-min-stock" type="number" min="0" value="0"></div>
+                            </div>
+                        </fieldset>
+                        <div class="form-row">
+                            <div class="form-group"><label data-i18n="col_supplier">Supplier</label><select class="form-control" id="p-supplier"><option value="">—</option></select></div>
+                            <div class="form-group"><label data-i18n="col_cost">Cost</label><input class="form-control" id="p-cost" type="number" step="0.01" min="0" value="0"></div>
+                        </div>
+                        <fieldset class="p-fieldset">
+                            <legend id="p-prices-legend" data-i18n="prices">Prices</legend>
+                            <table class="price-tiers">
+                                <thead><tr>
+                                    <th data-i18n="price_level">Level</th><th id="p-price-col-label" data-i18n="col_price">Price</th>
+                                    <th data-i18n="gross_pct">Gross %</th><th data-i18n="col_profit">Profit</th>
+                                </tr></thead>
+                                <tbody>
+                                    <tr><td data-i18n="price1">Price 1</td>
+                                        <td><input class="form-control" id="p-price" type="number" step="0.01" min="0" required></td>
+                                        <td><input class="form-control" id="p-gross1" readonly></td>
+                                        <td><input class="form-control" id="p-profit1" readonly></td></tr>
+                                    <tr><td data-i18n="price2">Price 2</td>
+                                        <td><input class="form-control" id="p-price2" type="number" step="0.01" min="0" value="0"></td>
+                                        <td><input class="form-control" id="p-gross2" readonly></td>
+                                        <td><input class="form-control" id="p-profit2" readonly></td></tr>
+                                    <tr><td data-i18n="price3">Price 3</td>
+                                        <td><input class="form-control" id="p-price3" type="number" step="0.01" min="0" value="0"></td>
+                                        <td><input class="form-control" id="p-gross3" readonly></td>
+                                        <td><input class="form-control" id="p-profit3" readonly></td></tr>
+                                    <tr><td data-i18n="price4">Price 4</td>
+                                        <td><input class="form-control" id="p-price4" type="number" step="0.01" min="0" value="0"></td>
+                                        <td><input class="form-control" id="p-gross4" readonly></td>
+                                        <td><input class="form-control" id="p-profit4" readonly></td></tr>
+                                </tbody>
+                            </table>
+                        </fieldset>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" data-close="product-modal" data-i18n="cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="save">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="expense-modal">
+        <div class="modal">
+            <div class="modal-header"><h2 data-i18n="add_expense">Add Expense</h2>
+                <button class="close-btn" data-close="expense-modal"><span class="material-symbols-rounded">close</span></button></div>
+            <form id="expense-form">
+                <div class="form-group"><label data-i18n="col_category">Category</label><select class="form-control" id="e-category"></select></div>
+                <div class="form-row">
+                    <div class="form-group"><label data-i18n="col_amount">Amount</label><input class="form-control" id="e-amount" type="number" step="0.01" min="0.01" required></div>
+                    <div class="form-group"><label data-i18n="col_date">Date</label><input class="form-control" id="e-date" type="date" required></div>
+                </div>
+                <div class="form-group"><label data-i18n="col_desc">Description</label><input class="form-control" id="e-desc"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" data-close="expense-modal" data-i18n="cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="save">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="return-modal">
+        <div class="modal modal-lg">
+            <div class="modal-header"><h2 data-i18n="process_return">Process Return</h2>
+                <button class="close-btn" data-close="return-modal"><span class="material-symbols-rounded">close</span></button></div>
+            <div id="return-order-meta" class="return-order-meta" hidden></div>
+            <div id="return-items" class="return-items-list"></div>
+            <div class="form-group" style="margin-top:1rem;"><label data-i18n="return_reason">Reason</label>
+                <input class="form-control" id="return-reason" data-i18n-ph="return_reason_ph" placeholder="e.g. Defective"></div>
+            <div class="summary-row total" style="margin:0.75rem 0;"><span data-i18n="refund_total">Refund total</span><span id="return-refund-total">$0.00</span></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" data-close="return-modal" data-i18n="cancel">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btn-confirm-return" data-i18n="confirm_return">Confirm Return</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="pos-return-modal">
+        <div class="modal modal-lg">
+            <div class="modal-header"><h2 data-i18n="return_from_sale">Return from sale</h2>
+                <button class="close-btn" data-close="pos-return-modal"><span class="material-symbols-rounded">close</span></button></div>
+            <p class="pos-return-hint" data-i18n="return_from_sale_hint">Pick the customer, then the sale, then what to return.</p>
+
+            <div id="pos-return-step-customer" class="pos-return-step">
+                <div class="form-row">
+                    <div class="form-group flex-grow">
+                        <label data-i18n="col_customer">Customer</label>
+                        <select id="pos-return-customer" class="form-control"></select>
+                    </div>
+                    <div class="form-group" style="min-width:140px;">
+                        <label data-i18n="col_order">Order</label>
+                        <div class="pos-return-order-lookup">
+                            <input type="number" class="form-control" id="pos-return-order-id" min="1" placeholder="#">
+                            <button type="button" class="btn btn-secondary" id="btn-pos-return-lookup" data-i18n="load_to_cart">Load</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions pos-return-actions">
+                    <button type="button" class="btn btn-secondary" id="btn-pos-return-quick" data-i18n="quick_return">Quick return (no sale)</button>
+                    <button type="button" class="btn btn-primary" id="btn-pos-return-load-sales" data-i18n="show_sales">Show sales</button>
+                </div>
+            </div>
+
+            <div id="pos-return-step-sales" class="pos-return-step" hidden>
+                <div id="pos-return-sales-list" class="pos-return-sales-list"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="btn-pos-return-back-customer" data-i18n="back">Back</button>
+                </div>
+            </div>
+
+            <div id="pos-return-step-items" class="pos-return-step" hidden>
+                <div id="pos-return-order-meta" class="return-order-meta"></div>
+                <div id="pos-return-items" class="return-items-list"></div>
+                <div class="form-group" style="margin-top:1rem;"><label data-i18n="return_reason">Reason</label>
+                    <input class="form-control" id="pos-return-reason" data-i18n-ph="return_reason_ph" placeholder="e.g. Defective"></div>
+                <div class="summary-row total" style="margin:0.75rem 0;"><span data-i18n="refund_total">Refund total</span><span id="pos-return-refund-total">$0.00</span></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="btn-pos-return-back-sales" data-i18n="back">Back</button>
+                    <button type="button" class="btn btn-primary" id="btn-pos-return-confirm" data-i18n="confirm_return">Confirm Return</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="blind-return-modal">
+        <div class="modal modal-lg">
+            <div class="modal-header"><h2 data-i18n="quick_return">Quick return (no sale)</h2>
+                <button class="close-btn" data-close="blind-return-modal"><span class="material-symbols-rounded">close</span></button></div>
+            <p class="pos-return-hint" data-i18n="quick_return_hint">Use only when there is no receipt. Scan items to put back in stock.</p>
+            <div class="form-row">
+                <div class="form-group flex-grow">
+                    <label data-i18n="scan_or_search">Scan barcode or search...</label>
+                    <div class="search-box"><span class="material-symbols-rounded">qr_code_scanner</span>
+                        <input type="text" id="blind-search" class="form-control" data-i18n-ph="scan_or_search" placeholder="Scan barcode or search..."></div>
+                </div>
+                <div class="form-group" style="min-width:160px;">
+                    <label data-i18n="col_customer">Customer</label>
+                    <select id="blind-customer" class="form-control"></select>
+                </div>
+            </div>
+            <div id="blind-return-items" class="blind-return-list"></div>
+            <div class="form-group" style="margin-top:1rem;"><label data-i18n="return_reason">Reason</label>
+                <input class="form-control" id="blind-return-reason" data-i18n-ph="return_reason_ph" placeholder="e.g. Defective"></div>
+            <div class="summary-row total" style="margin:0.75rem 0;"><span data-i18n="refund_total">Refund total</span><span id="blind-return-total">$0.00</span></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" data-close="blind-return-modal" data-i18n="cancel">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btn-confirm-blind-return" data-i18n="confirm_return">Confirm Return</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="notif-modal">
+        <div class="modal modal-sm">
+            <div class="modal-header">
+                <h2 data-i18n="tool_notif">Notifications</h2>
+                <div class="notif-header-actions">
+                    <button type="button" class="btn-icon notif-clear-all" id="btn-notif-clear-all" data-i18n-title="clear_all_notifications" title="Clear all">
+                        <span class="material-symbols-rounded">delete</span>
+                    </button>
+                    <button class="close-btn" data-close="notif-modal"><span class="material-symbols-rounded">close</span></button>
+                </div>
+            </div>
+            <div id="notif-list" class="notif-list"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="calc-modal">
+        <div class="modal modal-sm">
+            <div class="modal-header"><h2 data-i18n="tool_calc">Calculator</h2>
+                <button class="close-btn" data-close="calc-modal"><span class="material-symbols-rounded">close</span></button></div>
+            <div class="calc">
+                <div class="calc-display" id="calc-display">0</div>
+                <div class="calc-keys">
+                    <button type="button" data-calc="C" class="calc-fn">C</button>
+                    <button type="button" data-calc="±" class="calc-fn">±</button>
+                    <button type="button" data-calc="%" class="calc-fn">%</button>
+                    <button type="button" data-calc="/" class="calc-op">÷</button>
+                    <button type="button" data-calc="7">7</button>
+                    <button type="button" data-calc="8">8</button>
+                    <button type="button" data-calc="9">9</button>
+                    <button type="button" data-calc="*" class="calc-op">×</button>
+                    <button type="button" data-calc="4">4</button>
+                    <button type="button" data-calc="5">5</button>
+                    <button type="button" data-calc="6">6</button>
+                    <button type="button" data-calc="-" class="calc-op">-</button>
+                    <button type="button" data-calc="1">1</button>
+                    <button type="button" data-calc="2">2</button>
+                    <button type="button" data-calc="3">3</button>
+                    <button type="button" data-calc="+" class="calc-op">+</button>
+                    <button type="button" data-calc="0" class="calc-zero">0</button>
+                    <button type="button" data-calc=".">.</button>
+                    <button type="button" data-calc="=" class="calc-eq">=</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+            <div class="modal-overlay" id="backup-modal">
+        <div class="modal">
+            <div class="modal-header"><h2 data-i18n="tool_backup">Backup</h2>
+                <button class="close-btn" data-close="backup-modal"><span class="material-symbols-rounded">close</span></button></div>
+            <p id="backup-status" class="muted" style="margin-bottom:1rem;">—</p>
+            <div class="modal-actions" style="justify-content:flex-start; flex-wrap:wrap; gap:8px;">
+                <button type="button" class="btn btn-secondary btn-export" id="btn-backup-export"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
+                <button type="button" class="btn btn-secondary btn-import" id="btn-backup-import"><span class="material-symbols-rounded">download</span><span data-i18n="import">Import</span></button>
+                <input type="file" id="backup-import-file" accept=".db,application/octet-stream" hidden>
+                <button type="button" class="btn btn-delete" id="btn-backup-factory" data-i18n="factory_reset">Factory Delete</button>
+                <button type="button" class="btn btn-secondary" id="btn-open-backup" data-i18n="open_backup_folder">Open Folder</button>
+            </div>
+            <div id="backup-files" class="backup-files" style="margin-top:1rem;"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="about-modal">
+        <div class="modal about-modal">
+            <div class="modal-header">
+                <h2 data-i18n="about_us">About Us</h2>
+                <button class="close-btn" data-close="about-modal"><span class="material-symbols-rounded">close</span></button>
+            </div>
+            <div class="about-body">
+                <div class="about-logo-tile">
+                    <img src="/Assets/softio_arrow_logo.png" alt="Softio" onerror="this.src='/Assets/softio_logo.png'">
+                </div>
+                <h3 class="about-app-name" data-i18n="about_app_name">a2z Tech</h3>
+                <p class="about-version" data-i18n="about_version">Version 1.0.2 Platinum</p>
+                <p class="about-desc" data-i18n="about_desc">A comprehensive Inventory and Sales Management System designed to meet the needs of SMBs. Features modern UI, real-time sync, and multi-language support.</p>
+                <div class="about-divider"></div>
+                <p class="about-dev" data-i18n="about_dev">Developed by Softio Digital Transformation</p>
+                <button type="button" class="btn btn-primary about-contact" id="btn-contact-support">
+                    <img src="/Assets/nuricon_contact_us.png" alt="" class="about-contact-icon">
+                    <span data-i18n="about_contact">Contact Support</span>
+                </button>
+                <p class="about-copy" data-i18n="about_copyright">© 2026 Softio Services. All Rights Reserved.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="license-modal">
+        <div class="modal">
+            <div class="modal-header"><h2 data-i18n="activate_license">Activate License</h2>
+                <button class="close-btn" data-close="license-modal"><span class="material-symbols-rounded">close</span></button></div>
+            <p class="muted" style="margin-bottom:1rem;" data-i18n="license_subtitle">Enter your license key to activate this machine.</p>
+            <div class="form-group">
+                <label data-i18n="license_key">License Key</label>
+                <input class="form-control" id="lic-key" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label data-i18n="machine_id">Machine ID</label>
+                <div class="hwid-row">
+                    <code id="lic-hwid" class="hwid-code">—</code>
+                    <button type="button" class="btn btn-secondary btn-sm" id="btn-copy-hwid" data-i18n="copy">Copy</button>
+                </div>
+            </div>
+            <div id="license-activate-error" class="error-box"></div>
+            <div class="modal-actions" style="flex-wrap:wrap;">
+                <button type="button" class="btn btn-secondary" id="btn-start-trial" data-i18n="start_trial">Start Trial</button>
+                <button type="button" class="btn btn-secondary" data-close="license-modal" data-i18n="cancel">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btn-confirm-activate" data-i18n="activate_btn">Activate</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="customer-modal">
+        <div class="modal">
+            <div class="modal-header"><h2 id="customer-modal-title" data-i18n="add_customer">Add Customer</h2>
+                <button class="close-btn" data-close="customer-modal"><span class="material-symbols-rounded">close</span></button></div>
+            <form id="customer-form">
+                <input type="hidden" id="cust-id">
+                <div class="form-group"><label data-i18n="col_name">Name</label><input class="form-control" id="cust-name" required></div>
+                <div class="form-row">
+                    <div class="form-group"><label data-i18n="col_phone">Phone</label><input class="form-control" id="cust-phone"></div>
+                    <div class="form-group"><label data-i18n="col_email">Email</label><input class="form-control" id="cust-email" type="email"></div>
+                </div>
+                <div class="form-group"><label data-i18n="col_address">Address</label><input class="form-control" id="cust-address"></div>
+                <div class="form-row">
+                    <div class="form-group"><label data-i18n="col_type">Type</label><input class="form-control" id="cust-type" value="Regular"></div>
+                    <div class="form-group"><label data-i18n="credit_limit">Credit Limit</label><input class="form-control" id="cust-credit" type="number" step="0.01" min="0" value="1000"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label data-i18n="payment_due">Payment Due Date</label><input class="form-control" id="cust-due" type="date"></div>
+                    <div class="form-group"><label data-i18n="reminder_days">Reminder Days</label><input class="form-control" id="cust-reminder" type="number" min="0" value="0"></div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" data-close="customer-modal" data-i18n="cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="save">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="supplier-modal">
+        <div class="modal">
+            <div class="modal-header"><h2 id="supplier-modal-title" data-i18n="add_supplier">Add Supplier</h2>
+                <button class="close-btn" data-close="supplier-modal"><span class="material-symbols-rounded">close</span></button></div>
+            <form id="supplier-form">
+                <input type="hidden" id="supp-id">
+                <div class="form-group"><label data-i18n="col_name">Name</label><input class="form-control" id="supp-name" required></div>
+                <div class="form-row">
+                    <div class="form-group"><label data-i18n="col_phone">Phone</label><input class="form-control" id="supp-phone"></div>
+                    <div class="form-group"><label data-i18n="col_email">Email</label><input class="form-control" id="supp-email" type="email"></div>
+                </div>
+                <div class="form-group"><label data-i18n="col_address">Address</label><input class="form-control" id="supp-address"></div>
+                <div class="form-row">
+                    <div class="form-group"><label data-i18n="col_contact">Contact</label><input class="form-control" id="supp-contact"></div>
+                    <div class="form-group"><label data-i18n="col_type">Type</label><input class="form-control" id="supp-type" value="Regular"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label data-i18n="payment_due">Payment Due Date</label><input class="form-control" id="supp-due" type="date"></div>
+                    <div class="form-group"><label data-i18n="reminder_days">Reminder Days</label><input class="form-control" id="supp-reminder" type="number" min="0" value="0"></div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" data-close="supplier-modal" data-i18n="cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="save">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="user-modal">
+        <div class="modal">
+            <div class="modal-header"><h2 id="user-modal-title" data-i18n="add_user">Add User</h2>
+                <button class="close-btn" data-close="user-modal"><span class="material-symbols-rounded">close</span></button></div>
+            <form id="user-form">
+                <input type="hidden" id="user-id">
+                <div class="form-group"><label data-i18n="username">Username</label><input class="form-control" id="user-username" required autocomplete="off"></div>
+                <div class="form-group"><label data-i18n="col_name">Name</label><input class="form-control" id="user-fullname"></div>
+                <div class="form-group"><label data-i18n="password">Password</label><input class="form-control" id="user-password" type="password" autocomplete="new-password"></div>
+                <div class="form-group"><label data-i18n="col_role">Role</label>
+                    <select class="form-control" id="user-role">
+                        <option value="Admin" data-i18n="role_admin">Admin</option>
+                        <option value="Staff" selected data-i18n="role_staff">Staff</option>
+                        <option value="Accountant" data-i18n="role_accountant">Accountant</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" data-close="user-modal" data-i18n="cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="save">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="category-modal">
+        <div class="modal modal-sm">
+            <div class="modal-header"><h2 data-i18n="add_category">Add Category</h2>
+                <button class="close-btn" data-close="category-modal"><span class="material-symbols-rounded">close</span></button></div>
+            <form id="category-form">
+                <input type="hidden" id="cat-old-name">
+                <div class="form-group"><label data-i18n="col_name">Name</label><input class="form-control" id="cat-name" required></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" data-close="category-modal" data-i18n="cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="save">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="currency-modal">
+        <div class="modal">
+            <div class="modal-header"><h2 data-i18n="add_currency">Add Currency</h2>
+                <button class="close-btn" data-close="currency-modal"><span class="material-symbols-rounded">close</span></button></div>
+            <form id="currency-form">
+                <div class="form-row">
+                    <div class="form-group"><label data-i18n="col_code">Code</label><input class="form-control" id="cur-code" required maxlength="6"></div>
+                    <div class="form-group"><label data-i18n="col_symbol">Symbol</label><input class="form-control" id="cur-symbol"></div>
+                </div>
+                <div class="form-group"><label data-i18n="col_name">Name</label><input class="form-control" id="cur-name"></div>
+                <div class="form-group"><label data-i18n="col_rate">Rate</label><input class="form-control" id="cur-rate" type="number" step="0.0001" min="0" value="1" required></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" data-close="currency-modal" data-i18n="cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="save">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="order-view-modal">
+        <div class="modal">
+            <div class="modal-header"><h2 data-i18n="view_order">View Order</h2>
+                <button class="close-btn" data-close="order-view-modal"><span class="material-symbols-rounded">close</span></button></div>
+            <div id="order-view-body" class="table-wrapper"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" data-close="order-view-modal" data-i18n="cancel">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="barcode-preview-modal">
+        <div class="modal barcode-print-dialog">
+            <div class="bpd-layout">
+                <aside class="bpd-sidebar">
+                    <div class="bpd-sidebar-scroll">
+                        <div class="modal-header">
+                            <h2 id="barcode-preview-title" data-i18n="print">Print</h2>
+                            <button class="close-btn" data-close="barcode-preview-modal" type="button"><span class="material-symbols-rounded">close</span></button>
+                        </div>
+                        <p class="bpd-sheet-meta" id="bpd-sheet-count">Total: 1 sheet of paper</p>
+
+                        <div class="form-group">
+                            <label data-i18n="print_destination">Destination</label>
+                            <select class="form-control" id="bpd-printer"></select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="print_protocol">Print mode</label>
+                            <select class="form-control" id="bpd-protocol">
+                                <option value="auto" data-i18n="print_protocol_auto">Auto (recommended)</option>
+                                <option value="tspl" data-i18n="print_protocol_tspl">Thermal label (TSPL)</option>
+                                <option value="gdi" data-i18n="print_protocol_gdi">Windows printer (GDI)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="print_copies">Copies</label>
+                            <input class="form-control" id="bpd-copies" type="number" min="1" max="99" value="1">
+                        </div>
+
+                        <fieldset class="p-fieldset">
+                            <legend data-i18n="print_layout">Layout</legend>
+                            <label class="p-radio"><input type="radio" name="bpd-layout" value="portrait" checked> <span data-i18n="print_portrait">Portrait</span></label>
+                            <label class="p-radio"><input type="radio" name="bpd-layout" value="landscape"> <span data-i18n="print_landscape">Landscape</span></label>
+                        </fieldset>
+
+                        <fieldset class="p-fieldset">
+                            <legend data-i18n="print_pages">Pages</legend>
+                            <label class="p-radio"><input type="radio" name="bpd-pages" value="all" checked> <span data-i18n="all">All</span></label>
+                            <label class="p-radio"><input type="radio" name="bpd-pages" value="custom"> <span data-i18n="print_custom">Custom</span></label>
+                            <input class="form-control" id="bpd-page-range" type="text" placeholder="e.g. 1-5, 8" disabled data-i18n-ph="print_pages_ph">
+                        </fieldset>
+
+                        <div class="form-group">
+                            <label data-i18n="print_color">Color</label>
+                            <select class="form-control" id="bpd-color">
+                                <option value="color" data-i18n="print_color_full">Color</option>
+                                <option value="bw" data-i18n="print_color_bw">Black and white</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-actions bpd-actions">
+                        <button type="button" class="btn btn-secondary" data-close="barcode-preview-modal" data-i18n="cancel">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="btn-barcode-do-print"><span class="material-symbols-rounded">print</span><span data-i18n="print">Print</span></button>
+                    </div>
+                </aside>
+                <div class="bpd-preview" id="barcode-preview-print-area">
+                    <div class="bpd-paper" id="bpd-paper">
+                        <div class="barcode-print-sheet" id="barcode-print-sheet"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="pos-print-modal">
+        <div class="modal barcode-print-dialog">
+            <div class="bpd-layout">
+                <aside class="bpd-sidebar">
+                    <div class="bpd-sidebar-scroll">
+                        <div class="modal-header">
+                            <h2 data-i18n="print">Print</h2>
+                            <button class="close-btn" data-close="pos-print-modal" type="button"><span class="material-symbols-rounded">close</span></button>
+                        </div>
+                        <p class="bpd-sheet-meta" id="ppd-sheet-count">Total: 1 sheet of paper</p>
+
+                        <div class="form-group">
+                            <label data-i18n="print_destination">Destination</label>
+                            <select class="form-control" id="ppd-printer"></select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="print_protocol">Print mode</label>
+                            <select class="form-control" id="ppd-protocol">
+                                <option value="auto" data-i18n="print_protocol_auto">Auto (recommended)</option>
+                                <option value="escpos" data-i18n="print_protocol_escpos">Thermal receipt (ESC/POS)</option>
+                                <option value="gdi" data-i18n="print_protocol_gdi">Windows printer (GDI)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="print_copies">Copies</label>
+                            <input class="form-control" id="ppd-copies" type="number" min="1" max="99" value="1">
+                        </div>
+
+                        <fieldset class="p-fieldset">
+                            <legend data-i18n="print_layout">Layout</legend>
+                            <label class="p-radio"><input type="radio" name="ppd-layout" value="portrait" checked> <span data-i18n="print_portrait">Portrait</span></label>
+                            <label class="p-radio"><input type="radio" name="ppd-layout" value="landscape"> <span data-i18n="print_landscape">Landscape</span></label>
+                        </fieldset>
+
+                        <fieldset class="p-fieldset">
+                            <legend data-i18n="print_pages">Pages</legend>
+                            <label class="p-radio"><input type="radio" name="ppd-pages" value="all" checked> <span data-i18n="all">All</span></label>
+                            <label class="p-radio"><input type="radio" name="ppd-pages" value="custom"> <span data-i18n="print_custom">Custom</span></label>
+                            <input class="form-control" id="ppd-page-range" type="text" placeholder="e.g. 1-5, 8" disabled data-i18n-ph="print_pages_ph">
+                        </fieldset>
+
+                        <div class="form-group">
+                            <label data-i18n="print_color">Color</label>
+                            <select class="form-control" id="ppd-color">
+                                <option value="color" data-i18n="print_color_full">Color</option>
+                                <option value="bw" data-i18n="print_color_bw">Black and white</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-actions bpd-actions">
+                        <button type="button" class="btn btn-secondary" data-close="pos-print-modal" data-i18n="cancel">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="btn-pos-do-print"><span class="material-symbols-rounded">print</span><span data-i18n="print">Print</span></button>
+                    </div>
+                </aside>
+                <div class="bpd-preview" id="pos-print-preview-area">
+                    <div class="bpd-paper bpd-paper-receipt" id="ppd-paper">
+                        <div class="pos-receipt-sheet" id="pos-receipt-sheet"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="quotation-preview-modal">
+        <div class="modal quotation-preview-modal">
+            <div class="modal-header">
+                <h2 id="quote-preview-title" data-i18n="quote_preview_title">Quotation Preview</h2>
+                <button class="close-btn" data-close="quotation-preview-modal"><span class="material-symbols-rounded">close</span></button>
+            </div>
+            <div class="quote-preview-scroll" id="quote-preview-print-area">
+                <div class="quote-sheet" id="quote-preview-sheet">
+                    <div class="quote-sheet-header">
+                        <div class="quote-brand">
+                            <div>
+                                <div class="quote-company" id="quote-company-name">a2z Tech</div>
+                                <div class="quote-company-info" id="quote-company-info">Jnah- Rihab Road | Beirut - Lebanon | Phone: +961 76 117731</div>
+                            </div>
+                        </div>
+                        <div class="quote-doc-title" data-i18n="quote_preview_quote">QUOTATION</div>
+                    </div>
+                    <div class="quote-meta" id="quote-meta-line"></div>
+                    <div class="quote-cust-head" data-i18n="quote_preview_cust_header">Customer Details</div>
+                    <div class="quote-cust-body" id="quote-cust-body"></div>
+                    <div class="table-wrapper quote-items-wrap">
+                        <table class="quote-items-table">
+                            <thead>
+                                <tr>
+                                    <th data-i18n="quote_col_photo">Photo</th>
+                                    <th data-i18n="quote_col_desc">Item Description</th>
+                                    <th data-i18n="col_qty">Quantity</th>
+                                    <th data-i18n="col_price">Price</th>
+                                    <th data-i18n="col_total">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="quote-items-body"></tbody>
+                        </table>
+                    </div>
+                    <div class="quote-footer-grid">
+                        <div class="quote-terms">
+                            <h4 data-i18n="quote_terms_head">TERMS AND CONDITIONS</h4>
+                            <p data-i18n="quote_terms_body">• Validity: 15 days from issue.
+• Payment due prior to delivery.
+• Acceptance indicates billing confirmation.
+
+Accepted By: __________________________</p>
+                        </div>
+                        <div class="quote-totals" id="quote-totals"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions quote-preview-actions">
+                <button type="button" class="btn btn-quote-cancel" data-close="quotation-preview-modal" data-i18n="cancel">Cancel</button>
+                <button type="button" class="btn btn-quote-export" id="btn-quote-export" data-i18n="export">Export</button>
+                <button type="button" class="btn btn-quote-print" id="btn-quote-print" data-i18n="print">Print</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="stock-modal">
+        <div class="modal modal-sm">
+            <div class="modal-header"><h2 data-i18n="adjust_stock">Adjust Stock</h2>
+                <button class="close-btn" data-close="stock-modal"><span class="material-symbols-rounded">close</span></button></div>
+            <form id="stock-form">
+                <input type="hidden" id="stock-product-id">
+                <div class="form-group"><label data-i18n="col_stock">Change</label><input class="form-control" id="stock-change" type="number" step="1" required placeholder="+/-"></div>
+                <div class="form-group"><label data-i18n="return_reason">Reason</label><input class="form-control" id="stock-reason"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" data-close="stock-modal" data-i18n="cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="save">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="categories-manage-modal">
+        <div class="modal">
+            <div class="modal-header"><h2 data-i18n="manage_categories">Manage Categories</h2>
+                <button class="close-btn" data-close="categories-manage-modal"><span class="material-symbols-rounded">close</span></button></div>
+            <div id="categories-manage-list" class="manage-list"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" data-close="categories-manage-modal" data-i18n="cancel">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="customer-details-modal">
+        <div class="modal">
+            <div class="modal-header"><h2 data-i18n="details">Customer Details</h2>
+                <button class="close-btn" data-close="customer-details-modal"><span class="material-symbols-rounded">close</span></button></div>
+            <div id="customer-details-info"></div>
+            <form id="customer-payment-form" style="margin-top:1rem;">
+                <input type="hidden" id="cust-pay-id">
+                <div class="form-row">
+                    <div class="form-group"><label data-i18n="col_amount">Amount</label><input class="form-control" id="cust-pay-amount" type="number" step="0.01" min="0.01" required></div>
+                    <div class="form-group"><label data-i18n="return_reason">Note</label><input class="form-control" id="cust-pay-note"></div>
+                </div>
+                <div class="modal-actions" style="justify-content:flex-start;">
+                    <button type="submit" class="btn btn-primary" data-i18n="receive_payment">Receive Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="supplier-details-modal">
+        <div class="modal">
+            <div class="modal-header"><h2 data-i18n="details">Supplier Details</h2>
+                <button class="close-btn" data-close="supplier-details-modal"><span class="material-symbols-rounded">close</span></button></div>
+            <div id="supplier-details-info"></div>
+            <form id="supplier-payment-form" style="margin-top:1rem;">
+                <input type="hidden" id="supp-pay-id">
+                <div class="form-row">
+                    <div class="form-group"><label data-i18n="col_amount">Amount</label><input class="form-control" id="supp-pay-amount" type="number" step="0.01" min="0.01" required></div>
+                    <div class="form-group"><label data-i18n="return_reason">Note</label><input class="form-control" id="supp-pay-note"></div>
+                </div>
+                <div class="modal-actions" style="justify-content:flex-start;">
+                    <button type="submit" class="btn btn-primary" data-i18n="pay_supplier">Pay Supplier</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="exp-cats-modal">
+        <div class="modal modal-sm">
+            <div class="modal-header"><h2 data-i18n="manage_categories">Manage Categories</h2>
+                <button class="close-btn" data-close="exp-cats-modal"><span class="material-symbols-rounded">close</span></button></div>
+            <form id="exp-cat-add-form" style="margin-bottom:1rem;">
+                <div class="form-group"><label data-i18n="add_exp_category">Add Category</label>
+                    <div style="display:flex;gap:8px;">
+                        <input class="form-control" id="exp-cat-new-name" required>
+                        <button type="submit" class="btn btn-primary btn-sm" data-i18n="save">Save</button>
+                    </div>
+                </div>
+            </form>
+            <div id="exp-cats-list" class="manage-list"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" data-close="exp-cats-modal" data-i18n="cancel">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="shipping-modal">
+        <div class="modal">
+            <div class="modal-header"><h2 data-i18n="add_shipping">Add Shipping Details</h2>
+                <button class="close-btn" data-close="shipping-modal"><span class="material-symbols-rounded">close</span></button></div>
+            <form id="shipping-form">
+                <div class="form-group">
+                    <label data-i18n="col_customer">Customer</label>
+                    <div class="pos-customer-row">
+                        <select id="ship-customer" class="form-control"></select>
+                        <button type="button" class="btn-pos-add-cust" id="btn-ship-add-customer" title="Add Customer">
+                            <span class="material-symbols-rounded">add</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group"><label data-i18n="shipping_to">Shipping To</label>
+                    <textarea class="form-control" id="ship-to" rows="3" required></textarea></div>
+                <div class="form-row">
+                    <div class="form-group"><label data-i18n="order_date">Order Date</label>
+                        <input type="date" class="form-control" id="ship-order-date"></div>
+                    <div class="form-group"><label data-i18n="delivery_date">Delivery Date</label>
+                        <input type="date" class="form-control" id="ship-delivery-date"></div>
+                </div>
+                <div class="form-group"><label data-i18n="payment_due">Payment Due Date</label>
+                    <input type="date" class="form-control" id="ship-due-date"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="btn-clear-shipping" data-i18n="clear">Clear</button>
+                    <button type="button" class="btn btn-secondary" data-close="shipping-modal" data-i18n="cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="save">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="drafts-modal">
+        <div class="modal modal-lg">
+            <div class="modal-header"><h2 data-i18n="manage_drafts">Manage Drafts</h2>
+                <button class="close-btn" data-close="drafts-modal"><span class="material-symbols-rounded">close</span></button></div>
+            <div class="table-wrapper">
+                <table><thead><tr>
+                    <th data-i18n="col_order">Order</th><th data-i18n="col_date">Date</th>
+                    <th data-i18n="col_customer">Customer</th><th data-i18n="col_total">Total</th>
+                    <th data-i18n="col_actions">Actions</th>
+                </tr></thead><tbody id="drafts-body"></tbody></table>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" data-close="drafts-modal" data-i18n="cancel">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay confirm-modal-overlay" id="confirm-modal">
+        <div class="modal modal-sm confirm-modal">
+            <div class="modal-header"><h2 id="confirm-title" data-i18n="confirm_title">Please confirm</h2></div>
+            <p id="confirm-message" class="confirm-message"></p>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="confirm-cancel" data-i18n="cancel">Cancel</button>
+                <button type="button" class="btn btn-delete" id="confirm-ok" data-i18n="delete">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay confirm-modal-overlay" id="prompt-modal">
+        <div class="modal modal-sm confirm-modal">
+            <div class="modal-header"><h2 id="prompt-title" data-i18n="add_uom">Add Unit of Measure</h2></div>
+            <p id="prompt-message" class="confirm-message" data-i18n="add_uom_hint">Enter a custom unit name (e.g. carton, dozen).</p>
+            <div class="form-group" style="margin: 0 0 1rem;">
+                <input type="text" class="form-control" id="prompt-input" maxlength="32" autocomplete="off">
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="prompt-cancel" data-i18n="cancel">Cancel</button>
+                <button type="button" class="btn btn-add" id="prompt-ok" data-i18n="add">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="lock-overlay" class="lock-overlay" hidden>
+        <div class="lock-card">
+            <img class="lock-icon" src="/Assets/nuricon_lock.png" alt="">
+            <h2 data-i18n="locked_title">Screen Locked</h2>
+            <p class="subtitle" data-i18n="locked_subtitle">Enter your password to continue</p>
+            <div id="lock-error" class="error-box"></div>
+            <form id="lock-form">
+                <div class="form-group">
+                    <label data-i18n="password">Password</label>
+                    <input type="password" id="lock-pass" class="form-control" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;" data-i18n="unlock_btn">Unlock</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script src="app.js?v=20260810superadmin" charset="utf-8"></script>
+</body>
+</html>
