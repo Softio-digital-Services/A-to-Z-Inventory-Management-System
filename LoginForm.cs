@@ -120,7 +120,7 @@ namespace InventorySystem
             // Background
             this.tableLayoutPanel1.BackColor = ThemeConfig.BackgroundColor; 
             
-            // Brand name (no Panache logo)
+            // Brand name (text / custom logo)
             Label lblBrand = new Label();
             lblBrand.Text = "a2z Tech";
             lblBrand.Font = new Font("Segoe UI Semibold", 22f, FontStyle.Bold);

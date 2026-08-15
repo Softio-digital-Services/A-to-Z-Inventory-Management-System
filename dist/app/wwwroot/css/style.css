@@ -4090,7 +4090,7 @@ body.web-client:has(#pos.active) .main-content {
   box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.18);
 }
 
-/* Panache live scale — select → read → add to cart */
+/* Live scale — select → read → add to cart */
 #pos .pos-scale-box {
   margin: 0;
   padding: 8px 10px;

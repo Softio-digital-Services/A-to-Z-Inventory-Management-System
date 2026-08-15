@@ -5,10 +5,22 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $publishDir = Join-Path $root "dist\app"
 $distDir = Join-Path $root "dist"
-$iss = Join-Path $PSScriptRoot "Panache.iss"
-$csproj = Join-Path $root "PanacheInventorySystem.csproj"
+$iss = Join-Path $PSScriptRoot "A2ZTech.iss"
+$csproj = Join-Path $root "A2ZTech.csproj"
 
 Write-Host "==> Publishing self-contained Release (win-x64)..." -ForegroundColor Cyan
+# If a running app locks dist\app\Data\inventory.db, move Data aside so publish can clean.
+$dataDir = Join-Path $publishDir "Data"
+$dataBackup = Join-Path $distDir "_Data_build_backup"
+if (Test-Path $dataDir) {
+    if (Test-Path $dataBackup) { Remove-Item $dataBackup -Recurse -Force -ErrorAction SilentlyContinue }
+    try {
+        Move-Item -Path $dataDir -Destination $dataBackup -Force
+        Write-Host "Moved locked Data aside for rebuild." -ForegroundColor Yellow
+    } catch {
+        Write-Host "Could not move Data (may be locked): $_" -ForegroundColor Yellow
+    }
+}
 if (Test-Path $publishDir) { Remove-Item $publishDir -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $publishDir | Out-Null
 
@@ -30,7 +42,7 @@ $iscc = $isccCandidates | Where-Object { $_ -and (Test-Path $_) } | Select-Objec
 
 New-Item -ItemType Directory -Force -Path $distDir | Out-Null
 
-# Remove old Panache-named outputs
+# Remove obsolete installer/portable names if present
 @(
     (Join-Path $distDir "PanacheSetup.exe"),
     (Join-Path $distDir "PanacheInventory-Portable.zip")
@@ -59,3 +71,14 @@ else {
 Write-Host ""
 Write-Host "Published app folder: $publishDir"
 Write-Host "Run locally: $(Join-Path $publishDir 'A2ZTech.exe')"
+
+# Restore local Data after publish so developer DB is kept
+if (Test-Path $dataBackup) {
+    $restoredData = Join-Path $publishDir "Data"
+    if (-not (Test-Path $restoredData)) {
+        Move-Item -Path $dataBackup -Destination $restoredData -Force
+        Write-Host "Restored local Data folder." -ForegroundColor Yellow
+    } else {
+        Remove-Item $dataBackup -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}

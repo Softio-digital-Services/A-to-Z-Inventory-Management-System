@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/PanacheInventorySystem.csproj",
+                "${workspaceFolder}/A2ZTech.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary;ForceNoAlign"
             ],
@@ -23,7 +23,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/PanacheInventorySystem.csproj",
+                "${workspaceFolder}/A2ZTech.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary;ForceNoAlign"
             ],
@@ -37,7 +37,7 @@
                 "watch",
                 "run",
                 "--project",
-                "${workspaceFolder}/PanacheInventorySystem.csproj"
+                "${workspaceFolder}/A2ZTech.csproj"
             ],
             "problemMatcher": "$msCompile"
         }

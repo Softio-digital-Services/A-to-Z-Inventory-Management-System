@@ -246,21 +246,8 @@ namespace InventorySystem.Plugins
 
             try
             {
-                // Drop all tables
-                string[] tables = { "categories", "suppliers", "customers", "parts", "transactions", 
-                                    "users", "orders", "order_items", "payments", "purchase_orders", 
-                                    "purchase_order_items", "returns", "return_items", "expenses", "expense_categories" };
-
-                foreach (string table in tables)
-                {
-                    DatabaseHelper.ExecuteNonQuery($"DROP TABLE IF EXISTS {table};");
-                }
-
-                    // Re-initialize (recreates schema + Softio Super Admin)
-                    InventorySystem.Helpers.DatabaseInitializer.Initialize();
-                    InventorySystem.Helpers.DatabaseInitializer.EnsureSoftioSuperAdmin();
-
-                    MessageHelper.ShowSuccess(LocalizationManager.GetString("Plugins_ResetDbSuccess", "Database reset successfully. Please restart the application."));
+                InventorySystem.Helpers.DatabaseInitializer.FactoryReset();
+                MessageHelper.ShowSuccess(LocalizationManager.GetString("Plugins_ResetDbSuccess", "Database reset successfully. Please restart the application."));
             }
             catch (Exception ex)
             {

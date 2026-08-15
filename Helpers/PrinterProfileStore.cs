@@ -35,8 +35,26 @@ namespace InventorySystem.Helpers
         private static readonly object Gate = new object();
         private static Dictionary<string, PrinterProfile> _cache;
 
-        private static string FilePath =>
-            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "printer_profiles.json");
+        private static string FilePath
+        {
+            get
+            {
+                string dir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "A2ZTech");
+                Directory.CreateDirectory(dir);
+                string path = Path.Combine(dir, "printer_profiles.json");
+                // One-time migrate from install folder if present
+                try
+                {
+                    string legacy = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "printer_profiles.json");
+                    if (!File.Exists(path) && File.Exists(legacy))
+                        File.Copy(legacy, path, overwrite: false);
+                }
+                catch { /* ignore */ }
+                return path;
+            }
+        }
 
         public static PrintProtocol ParseProtocol(string value)
         {

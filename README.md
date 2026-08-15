@@ -1,24 +1,20 @@
-# Car Parts Inventory Management System
+# a2z Tech Inventory Management System
 
-## 📋 Overview
+## Quick Start
 
-Complete inventory management system for car parts businesses with POS, customer management, supplier tracking, and comprehensive reporting.
-
-## 🚀 Quick Start
-
-### Run published web app (Otargi-style WebView2)
+### Run published app
 
 ```text
-dist\app\PanacheInventorySystem.exe
+dist\app\A2ZTech.exe
 ```
-
-This opens the full Panache web UI (dashboard, inventory, POS, reports, …) with scale support.
 
 Refresh `dist` after code changes:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\installer\build.ps1
 ```
+
+Installer output: `dist\A2ZTechSetup.exe`
 
 ### Prerequisites
 - Windows 10+ (win-x64) and WebView2 Runtime
@@ -27,13 +23,13 @@ powershell -ExecutionPolicy Bypass -File .\installer\build.ps1
 ### Running from source
 
 ```powershell
-dotnet run -c Release --project PanacheInventorySystem.csproj
+dotnet run -c Release --project A2ZTech.csproj
 ```
 
 Or Debug:
 
 ```text
-bin\Debug\net8.0-windows\win-x64\PanacheInventorySystem.exe
+bin\Debug\net8.0-windows\win-x64\A2ZTech.exe
 ```
 
 ### First-Time Setup
@@ -42,213 +38,20 @@ bin\Debug\net8.0-windows\win-x64\PanacheInventorySystem.exe
 2. **Default Login** — Softio.Admin / Softio@2026!
 3. **Database** — `Data\inventory.db` next to the exe (created on first run)
 
-## ✨ Features
+## Features
 
-### Core Modules
-- **Dashboard** - Real-time analytics and KPIs
-- **Inventory Management** - Parts tracking with low-stock alerts
-- **Point of Sale (POS)** - Quick sales processing
-- **Customer Management** - Customer profiles and purchase history
-- **Supplier Management** - Supplier tracking and orders
-- **Reports** - Sales, inventory, and financial reports
-- **User Management** - Role-based access control
+- Dashboard, Inventory, POS, Sales, Reports, History
+- Quotations, Customers, Suppliers, Expenses, Currencies
+- Barcodes, Users, Settings
+- Import/Export, licensing, offline-friendly UI fonts
 
-### Import/Export
-- **CSV Import/Export** - Parts, Customers, Suppliers
-- **Excel Compatible** - TSV format for Excel compatibility
-- **Templates** - Sample templates in `Templates\` folder
-- **Duplicate Detection** - Automatic skip of existing records
-- **Auto-Create Categories** - Categories created during import
+## Build
 
-### Licensing System
-- **Yearly Subscriptions** - 1-10 year licenses
-- **30-Day Trial** - Full feature access
-- **Hardware-Locked** - Prevents casual copying
-- **Offline Activation** - No internet required
-
-## 📁 Project Structure
-
-```
-InventorySystem-Final/
-├── bin/Debug/
-│   ├── CarPartsInventorySystem.exe    ← Main Application
-│   ├── Data/carparts.mdf              ← Database
-│   ├── Assets/                        ← UI Icons
-│   └── Logs/                          ← Error Logs
-├── Database/
-│   ├── SetupDatabase.bat              ← Database Setup
-│   ├── CreateCarPartsDatabase.sql     ← Schema
-│   └── *.ps1                          ← Helper Scripts
-├── Forms/                             ← UI Forms
-├── Helpers/                           ← Utility Classes
-├── Services/                          ← Business Logic
-├── Controls/                          ← Custom Controls
-├── Data/                              ← Data Models
-└── Templates/
-    └── Parts_Import_Template.csv      ← Import Template
-```
-
-## 🔧 Configuration
-
-### Database Connection
-Edit `Helpers\DatabaseConfig.cs`:
-```csharp
-public static string ConnectionString = 
-    @"Data Source=(LocalDB)\MSSQLLocalDB;
-      AttachDbFilename=|DataDirectory|\Data\carparts.mdf;
-      Integrated Security=True";
-```
-
-### Theme Customization
-Edit `Helpers\ThemeConfig.cs`:
-```csharp
-public static Color PrimaryColor = Color.FromArgb(59, 130, 246);
-public static Color AccentColor = Color.FromArgb(16, 185, 129);
-```
-
-## 📊 Import/Export Guide
-
-### Exporting Data
-
-1. Navigate to Parts/Customers/Suppliers tab
-2. Click **📤 Export** button
-3. Choose **Export to CSV** or **Export to Excel**
-4. Select save location
-5. File is created with timestamp
-
-### Importing Data
-
-1. Prepare CSV file with required columns:
-   - **Parts**: PartNumber, PartName, Category, Quantity, MinimumStock, UnitPrice, Location, Status
-   - **Customers**: CustomerName, Email, Phone, Address, City, PostalCode, Notes
-   - **Suppliers**: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes
-
-2. Click **📥 Import** button
-3. Choose **Import from CSV** or **Import from Excel**
-4. Select file
-5. Review import summary (imported/skipped counts)
-
-**Sample CSV (Parts):**
-```csv
-PartNumber,PartName,Category,Quantity,MinimumStock,UnitPrice,Location,Status
-P001,Brake Pad Set,Brakes,50,10,45.99,A1-Shelf2,Active
-P002,Oil Filter,Filters,100,20,8.99,B2-Shelf1,Active
-```
-
-## 🔑 License Management
-
-### Viewing License Info
-1. Click user avatar (top-right)
-2. Select "📄 License Info"
-3. View license type, expiration, and status
-
-### Renewing License
-1. Obtain new license key from administrator
-2. Click "License Info"
-3. Click "Renew License"
-4. Enter new key
-
-### Trial Period
-- 30 days full access
-- All features unlocked
-- Upgrade to full license anytime
-
-## 🗄️ Database Management
-
-### Backup Database
 ```powershell
-copy "bin\Debug\Data\carparts.mdf" "Backup\carparts_backup_$(Get-Date -Format 'yyyyMMdd').mdf"
+dotnet build A2ZTech.csproj
+powershell -ExecutionPolicy Bypass -File .\installer\build.ps1
 ```
 
-### Reset Database
-```powershell
-cd Database
-.\SetupDatabase.bat
-```
+## Support
 
-### Initialize Sample Data
-```powershell
-cd Database
-.\InitCategories.ps1
-```
-
-## 🐛 Troubleshooting
-
-### "Database connection failed"
-- Ensure SQL Server LocalDB is installed
-- Check database file exists: `bin\Debug\Data\carparts.mdf`
-- Run `Database\SetupDatabase.bat`
-
-### "License activation failed"
-- Verify license key is copied correctly (no spaces)
-- Check hardware hasn't changed significantly
-- Try "Start 30-Day Trial" option
-
-### "Import failed"
-- Verify CSV format matches template
-- Check for required columns (PartNumber, PartName)
-- Ensure no duplicate part numbers
-
-### Application won't start
-- Check error logs: `bin\Debug\Logs\error_log_YYYYMMDD.txt`
-- Verify .NET Framework 4.7.2+ is installed
-- Run as Administrator if needed
-
-## 📝 Development
-
-### Building
-```powershell
-dotnet build CarPartsInventorySystem.csproj
-```
-
-### Running Tests
-```powershell
-# Test database connection
-.\Database\CheckSchema.ps1
-
-# Test data integrity
-.\Database\CheckConstraints.ps1
-```
-
-### Adding New Features
-1. Create feature branch
-2. Add forms in `Forms\`
-3. Add business logic in `Services\`
-4. Update `MainForm.cs` navigation
-5. Test thoroughly
-6. Build and verify
-
-## 📚 Documentation
-
-- **User Guide**: See `README.md` (this file)
-- **Database Schema**: `Database\CreateCarPartsDatabase.sql`
-- **Import Templates**: `Templates\Parts_Import_Template.csv`
-- **Error Logs**: `bin\Debug\Logs\`
-
-## 🔐 Security
-
-- Passwords hashed with SHA256
-- License data encrypted (AES)
-- Hardware-locked licenses
-- Role-based access control
-- Audit logging for critical operations
-
-## 📞 Support
-
-For issues or questions:
-1. Check error logs: `bin\Debug\Logs\`
-2. Review troubleshooting section above
-3. Contact system administrator
-
-## 📄 License
-
-This software requires a valid license key for commercial use.
-- Trial: 30 days
-- Yearly: 1-10 years
-- Contact administrator for license keys
-
----
-
-**Version:** 2.0  
-**Last Updated:** February 2026  
-**Framework:** .NET Framework 4.7.2
+Check logs next to the app executable and contact Softio Services if needed.

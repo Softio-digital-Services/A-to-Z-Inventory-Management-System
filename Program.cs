@@ -383,7 +383,7 @@ namespace InventorySystem
                     }
                 });
 
-                // Serve desktop assets to the web portal
+                // Serve desktop assets (icons) from install folder
                 string assetsPath = System.IO.Path.Combine(builder.Environment.ContentRootPath, "Assets");
                 if (System.IO.Directory.Exists(assetsPath))
                 {
@@ -397,6 +397,19 @@ namespace InventorySystem
                         }
                     });
                 }
+
+                // User-writable product images (%LocalAppData%\A2ZTech\Assets) — checked after install Assets
+                string userAssetsPath = System.IO.Path.Combine(DatabaseConfig.UserDataRoot, "Assets");
+                System.IO.Directory.CreateDirectory(System.IO.Path.Combine(userAssetsPath, "Products"));
+                app.UseStaticFiles(new Microsoft.AspNetCore.Builder.StaticFileOptions
+                {
+                    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(userAssetsPath),
+                    RequestPath = "/Assets",
+                    OnPrepareResponse = ctx =>
+                    {
+                        ctx.Context.Response.Headers["Cache-Control"] = "public, max-age=3600";
+                    }
+                });
 
                 // - SignalR Hub endpoint -
                 app.MapHub<InventoryHub>("/hubs/inventory");
@@ -784,7 +797,7 @@ namespace InventorySystem
                         string ext = System.IO.Path.GetExtension(file.FileName);
                         if (string.IsNullOrWhiteSpace(ext)) ext = ".png";
                         string relDir = "Assets/Products";
-                        string absDir = System.IO.Path.Combine(appRoot, "Assets", "Products");
+                        string absDir = DatabaseConfig.ProductsImagesDirectory;
                         System.IO.Directory.CreateDirectory(absDir);
                         string name = Guid.NewGuid().ToString("N") + ext.ToLowerInvariant();
                         string abs = System.IO.Path.Combine(absDir, name);
@@ -1089,7 +1102,7 @@ namespace InventorySystem
                             totalAmount,
                             validityDays = 15,
                             companyName = ThemeConfig.CompanyName,
-                            companyInfo = "Jnah- Rihab Road | Beirut - Lebanon | Phone: +961 76 117731",
+                            companyInfo = " Kherbit Rouha - Main Road | West Beqaa - Lebanon | Phone: +961 76 561 498 ",
                             items
                         });
                     }
@@ -2163,6 +2176,7 @@ namespace InventorySystem
                         if (!System.IO.File.Exists(dbFile))
                             return Microsoft.AspNetCore.Http.Results.NotFound(new { error = "Database not found" });
 
+                        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
                         string dest = System.IO.Path.Combine(dir, $"backup_{DateTime.Now:yyyyMMdd_HHmmss}.db");
                         System.IO.File.Copy(dbFile, dest, true);
                         System.IO.File.WriteAllText(System.IO.Path.Combine(dir, "last_backup.txt"), DateTime.Now.ToString("o"));
@@ -2204,9 +2218,18 @@ namespace InventorySystem
                             return Microsoft.AspNetCore.Http.Results.NotFound(new { error = "Backup not found" });
                         string dbFile = DatabaseConfig.DatabasePath;
                         string safety = System.IO.Path.Combine(GetWebBackupDirectory(), $"pre_restore_{DateTime.Now:yyyyMMdd_HHmmss}.db");
-                        if (System.IO.File.Exists(dbFile))
-                            System.IO.File.Copy(dbFile, safety, true);
-                        System.IO.File.Copy(src, dbFile, true);
+                        try
+                        {
+                            if (System.IO.File.Exists(dbFile))
+                            {
+                                Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+                                System.IO.File.Copy(dbFile, safety, true);
+                            }
+                        }
+                        catch { /* safety copy best-effort */ }
+                        DatabaseConfig.ReplaceDatabaseFrom(src);
+                        DatabaseInitializer.Initialize();
+                        DatabaseInitializer.EnsureSoftioSuperAdmin();
                         return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, restored = safe, safetyCopy = safety });
                     }
                     catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
@@ -2249,10 +2272,18 @@ namespace InventorySystem
                             await file.CopyToAsync(fs);
                         string dbFile = DatabaseConfig.DatabasePath;
                         string safety = System.IO.Path.Combine(dir, $"pre_import_{DateTime.Now:yyyyMMdd_HHmmss}.db");
-                        if (System.IO.File.Exists(dbFile))
-                            System.IO.File.Copy(dbFile, safety, true);
-                        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
-                        System.IO.File.Copy(dest, dbFile, true);
+                        try
+                        {
+                            if (System.IO.File.Exists(dbFile))
+                            {
+                                Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+                                System.IO.File.Copy(dbFile, safety, true);
+                            }
+                        }
+                        catch { /* safety copy best-effort */ }
+                        DatabaseConfig.ReplaceDatabaseFrom(dest);
+                        DatabaseInitializer.Initialize();
+                        DatabaseInitializer.EnsureSoftioSuperAdmin();
                         System.IO.File.WriteAllText(System.IO.Path.Combine(dir, "last_backup.txt"), DateTime.Now.ToString("o"));
                         return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, file = name, safetyCopy = safety });
                     }
@@ -2266,20 +2297,19 @@ namespace InventorySystem
                         string dir = GetWebBackupDirectory();
                         System.IO.Directory.CreateDirectory(dir);
                         string dbFile = DatabaseConfig.DatabasePath;
+                        // Best-effort safety copy to LocalAppData (writable even under Program Files)
                         if (System.IO.File.Exists(dbFile))
                         {
-                            string safety = System.IO.Path.Combine(dir, $"pre_factory_{DateTime.Now:yyyyMMdd_HHmmss}.db");
-                            System.IO.File.Copy(dbFile, safety, true);
+                            try
+                            {
+                                Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+                                string safety = System.IO.Path.Combine(dir, $"pre_factory_{DateTime.Now:yyyyMMdd_HHmmss}.db");
+                                System.IO.File.Copy(dbFile, safety, true);
+                            }
+                            catch { /* safety copy is optional */ }
                         }
-                        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
-                        if (System.IO.File.Exists(dbFile))
-                            System.IO.File.Delete(dbFile);
-                        string dataDir = System.IO.Path.GetDirectoryName(dbFile);
-                        if (!string.IsNullOrEmpty(dataDir))
-                            System.IO.Directory.CreateDirectory(dataDir);
-                        // Rebuild empty schema and always re-create Softio Super Admin
-                        DatabaseInitializer.Initialize();
-                        DatabaseInitializer.EnsureSoftioSuperAdmin();
+                        // Wipe tables in-place (do not delete inventory.db — fails on locked/Program Files installs)
+                        DatabaseInitializer.FactoryReset();
                         return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
                     }
                     catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }

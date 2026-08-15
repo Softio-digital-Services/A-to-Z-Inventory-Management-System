@@ -443,7 +443,7 @@ const T = {
     }
 };
 
-let lang = localStorage.getItem('panache_lang') || localStorage.getItem('otargi_lang') || 'en';
+let lang = localStorage.getItem('a2z_lang') || localStorage.getItem('panache_lang') || localStorage.getItem('otargi_lang') || 'en';
 let currentUser = null;
 let products = [], categories = [], sales = [], customers = [], suppliers = [], users = [];
 let expenses = [], quotations = [], currencies = [], barcodeItems = [], expenseCategories = [];
@@ -3760,7 +3760,9 @@ function setupAuth() {
                 })
             });
             currentUser = user;
-            sessionStorage.setItem('panache_user', JSON.stringify(user));
+            sessionStorage.setItem('a2z_user', JSON.stringify(user));
+            sessionStorage.removeItem('panache_user');
+            sessionStorage.removeItem('otargi_user');
             document.getElementById('login-pass').value = '';
             document.getElementById('login-user').value = '';
             showApp();
@@ -3786,7 +3788,7 @@ function setupActions() {
     const btnLang = document.getElementById('btn-lang');
     if (btnLang) btnLang.onclick = () => {
         lang = lang === 'en' ? 'ar' : 'en';
-        localStorage.setItem('panache_lang', lang); applyI18n(); renderAll();
+        localStorage.setItem('a2z_lang', lang); applyI18n(); renderAll();
     };
 
     document.getElementById('btn-copy-connect-url')?.addEventListener('click', async () => {
@@ -4507,7 +4509,8 @@ function calcPress(key) {
     updateCalcDisplay();
 }
 
-const NOTIF_DISMISS_KEY = 'panache_dismissed_notifs';
+const NOTIF_DISMISS_KEY = 'a2z_dismissed_notifs';
+const NOTIF_DISMISS_KEY_LEGACY = 'panache_dismissed_notifs';
 
 function notifKey(n) {
     return `${n.type || ''}|${n.title || ''}|${n.message || ''}`;
@@ -4515,7 +4518,14 @@ function notifKey(n) {
 
 function loadDismissedNotifs() {
     try {
-        const raw = localStorage.getItem(NOTIF_DISMISS_KEY);
+        let raw = localStorage.getItem(NOTIF_DISMISS_KEY);
+        if (!raw) {
+            raw = localStorage.getItem(NOTIF_DISMISS_KEY_LEGACY);
+            if (raw) {
+                localStorage.setItem(NOTIF_DISMISS_KEY, raw);
+                localStorage.removeItem(NOTIF_DISMISS_KEY_LEGACY);
+            }
+        }
         const arr = raw ? JSON.parse(raw) : [];
         return new Set(Array.isArray(arr) ? arr : []);
     } catch { return new Set(); }
@@ -4726,9 +4736,11 @@ function setupTools() {
         if (!await confirmDialog(tr('confirm_factory_2'), { danger: true, confirmText: tr('factory_reset') })) return;
         try {
             await api('/api/backup/factory-reset', { method: 'POST', body: '{}' });
-            toast(tr('factory_ok'), 'success');
             closeModal('backup-modal');
-            await loadData();
+            try { sessionStorage.removeItem('a2z_user'); sessionStorage.removeItem('panache_user'); sessionStorage.removeItem('otargi_user'); } catch {}
+            currentUser = null;
+            hideApp();
+            toast(tr('factory_ok'), 'success');
         } catch (e) { toast(e.message || tr('factory_fail'), 'error'); }
     });
     document.getElementById('btn-open-backup')?.addEventListener('click', async () => {
@@ -4780,11 +4792,11 @@ const scaleManager = {
             manual.addEventListener('input', () => this.onManualWeightInput());
             manual.addEventListener('change', () => this.onManualWeightInput());
         }
-        await this.refreshPorts();
-        await this.refreshStatus();
+        // Hardware scale disabled on this build — soft-init only (no error spam)
+        try { await this.refreshPorts(); } catch { /* ignore */ }
+        try { await this.refreshStatus(); } catch { /* ignore */ }
         this.renderSelected();
         this.updateManualHint();
-        setInterval(() => this.refreshStatus(true), 4000);
     },
 
     getSelectedProduct() {
@@ -5248,13 +5260,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         try { setupSignalR(); } catch (e) { console.error('setupSignalR', e); }
         try { await scaleManager.init(); } catch (e) { console.error('scaleManager', e); }
 
-        const saved = sessionStorage.getItem('panache_user') || sessionStorage.getItem('otargi_user');
+        const saved = sessionStorage.getItem('a2z_user') || sessionStorage.getItem('panache_user') || sessionStorage.getItem('otargi_user');
         if (saved) {
             try {
                 currentUser = JSON.parse(saved);
+                sessionStorage.setItem('a2z_user', saved);
+                sessionStorage.removeItem('panache_user');
+                sessionStorage.removeItem('otargi_user');
                 showApp();
                 await loadData();
             } catch {
+                sessionStorage.removeItem('a2z_user');
                 sessionStorage.removeItem('panache_user');
                 sessionStorage.removeItem('otargi_user');
             }
