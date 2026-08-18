@@ -119,7 +119,7 @@ namespace InventorySystem.Forms
         public static string GetServerUrl()
         {
             string ip = GetLocalIpAddress();
-            return $"http://{ip}:5000";
+            return $"http://{ip}:{AppHostConfig.HttpPort}";
         }
 
         public static string GetLocalIpAddress()

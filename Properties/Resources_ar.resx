@@ -1070,6 +1070,12 @@
   <data name="Notif_LowStockMsg" xml:space="preserve">
     <value>{0} منخفض (متبقي {1})</value>
   </data>
+  <data name="Notif_OutOfStock" xml:space="preserve">
+    <value>تنبيه نفاد المخزون</value>
+  </data>
+  <data name="Notif_OutOfStockMsg" xml:space="preserve">
+    <value>{0} نفد من المخزون</value>
+  </data>
   <data name="Notif_RecentOrder" xml:space="preserve">
     <value>طلب حديث</value>
   </data>
@@ -2420,8 +2426,11 @@
   <data name="AddCat_TitleEdit" xml:space="preserve">
     <value>تعديل الفئة: {0}</value>
   </data>
+  <data name="AboutUs_Company" xml:space="preserve">
+    <value>Softio</value>
+  </data>
   <data name="AboutUs_AppName" xml:space="preserve">
-    <value>a2z Tech</value>
+    <value>نظام مخزون Generic</value>
   </data>
   <data name="AboutUs_Version" xml:space="preserve">
     <value>الإصدار 1.0.2 Platinum</value>

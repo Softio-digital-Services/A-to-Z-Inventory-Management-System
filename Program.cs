@@ -53,6 +53,16 @@ namespace InventorySystem
             catch { }
             InventorySystem.Helpers.LocalizationManager.SetLanguage(savedLanguage);
 
+            if (!AppHostConfig.TryAcquireSingleInstance())
+            {
+                MessageBox.Show(
+                    ThemeConfig.AppTitle + " is already running.",
+                    ThemeConfig.AppTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
+
             // Expose background task for server hosting without blocking UI thread
             _ = Task.Run(() => StartApiServer());
 
@@ -308,9 +318,7 @@ namespace InventorySystem
         {
             try
             {
-                string appRoot = Application.StartupPath;
-                if (string.IsNullOrWhiteSpace(appRoot))
-                    appRoot = AppContext.BaseDirectory;
+                string appRoot = ResolveAppRoot();
 
                 string certPath = System.IO.Path.Combine(appRoot, "Database", "pos_cert.pfx");
                 const string certPassword = "SoftioPos2026!";
@@ -324,10 +332,10 @@ namespace InventorySystem
                 // Configure Kestrel for both HTTP and HTTPS
                 builder.WebHost.ConfigureKestrel(options =>
                 {
-                    options.ListenAnyIP(5000); // HTTP
+                    options.ListenAnyIP(AppHostConfig.HttpPort); // HTTP — unique per brand
                     if (System.IO.File.Exists(certPath))
                     {
-                        options.ListenAnyIP(5001, listenOptions =>
+                        options.ListenAnyIP(AppHostConfig.HttpsPort, listenOptions =>
                         {
                             listenOptions.UseHttps(certPath, certPassword);
                         });
@@ -336,6 +344,8 @@ namespace InventorySystem
 
                 builder.Services.AddCors(c => c.AddDefaultPolicy(p =>
                     p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
+
+                builder.Services.AddHostedService<AutoBackupBackgroundService>();
 
                 // - SignalR for real-time sync -
                 builder.Services.AddSignalR();
@@ -355,7 +365,7 @@ namespace InventorySystem
                 InventoryBroadcaster.HubContext = app.Services
                     .GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<InventoryHub>>();
 
-                // Scale hardware disabled on Generic main (full support on `scale` branch)
+                // Scale hardware (TM-A17 / COM) — auto-connect only when Softio feature flag is on
                 ScaleApiBootstrap.WireBroadcasts();
 
                 app.UseCors();
@@ -383,7 +393,7 @@ namespace InventorySystem
                     }
                 });
 
-                // Serve desktop assets (icons) from install folder
+                // Serve desktop assets to the web portal
                 string assetsPath = System.IO.Path.Combine(builder.Environment.ContentRootPath, "Assets");
                 if (System.IO.Directory.Exists(assetsPath))
                 {
@@ -398,19 +408,6 @@ namespace InventorySystem
                     });
                 }
 
-                // User-writable product images (%LocalAppData%\A2ZTech\Assets) — checked after install Assets
-                string userAssetsPath = System.IO.Path.Combine(DatabaseConfig.UserDataRoot, "Assets");
-                System.IO.Directory.CreateDirectory(System.IO.Path.Combine(userAssetsPath, "Products"));
-                app.UseStaticFiles(new Microsoft.AspNetCore.Builder.StaticFileOptions
-                {
-                    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(userAssetsPath),
-                    RequestPath = "/Assets",
-                    OnPrepareResponse = ctx =>
-                    {
-                        ctx.Context.Response.Headers["Cache-Control"] = "public, max-age=3600";
-                    }
-                });
-
                 // - SignalR Hub endpoint -
                 app.MapHub<InventoryHub>("/hubs/inventory");
 
@@ -423,8 +420,8 @@ namespace InventorySystem
                     language = LocalizationManager.IsArabic ? "ar" : "en",
                     isArabic = LocalizationManager.IsArabic,
                     companyName = ThemeConfig.CompanyName,
-                    primaryColor = "#38BDF8",
-                    primaryRgb = "56, 189, 248"
+                    primaryColor = System.Drawing.ColorTranslator.ToHtml(ThemeConfig.PrimaryColor),
+                    primaryRgb = $"{ThemeConfig.PrimaryColor.R}, {ThemeConfig.PrimaryColor.G}, {ThemeConfig.PrimaryColor.B}"
                 }));
 
                 // - Dashboard stats -
@@ -453,6 +450,13 @@ namespace InventorySystem
                 });
 
                 // - Scan to Connect (phone / tablet on same Wi‑Fi) -
+                app.MapGet("/api/brand", () => Microsoft.AspNetCore.Http.Results.Ok(new
+                {
+                    brandId = AppHostConfig.BrandId,
+                    appName = ThemeConfig.AppTitle,
+                    port = AppHostConfig.HttpPort
+                }));
+
                 app.MapGet("/api/connect", () =>
                 {
                     try
@@ -463,7 +467,7 @@ namespace InventorySystem
                         {
                             url,
                             ip,
-                            port = 5000,
+                            port = AppHostConfig.HttpPort,
                             qrUrl = "/api/connect/qr"
                         });
                     }
@@ -670,7 +674,7 @@ namespace InventorySystem
                                 isInactive = inactive,
                                 taxRate = row["tax_rate"] == DBNull.Value ? 0m : Convert.ToDecimal(row["tax_rate"]),
                                 isStockTracked = row["is_stock_tracked"] == DBNull.Value || Convert.ToInt32(row["is_stock_tracked"]) == 1,
-                                sellByWeight = row["sell_by_weight"] != DBNull.Value && Convert.ToInt32(row["sell_by_weight"]) == 1,
+                                sellByWeight = false,
                                 price2 = row["price2"] == DBNull.Value ? 0m : Convert.ToDecimal(row["price2"]),
                                 price3 = row["price3"] == DBNull.Value ? 0m : Convert.ToDecimal(row["price3"]),
                                 price4 = row["price4"] == DBNull.Value ? 0m : Convert.ToDecimal(row["price4"]),
@@ -726,7 +730,9 @@ namespace InventorySystem
                                 fullName = "Softio Super Admin",
                                 isAdmin = true,
                                 isStaff = true,
-                                isAccountant = true
+                                isAccountant = true,
+                                isSoftioSuperAdmin = true,
+                                features = new { scaleEnabled = FeatureFlags.ScaleEnabled }
                             });
 
                         var dt = DatabaseHelper.ExecuteDataTable(
@@ -739,17 +745,21 @@ namespace InventorySystem
 
                         var row = dt.Rows[0];
                         string role = row["role"].ToString() ?? "";
+                        string username = row["username"].ToString() ?? "";
                         bool isAdmin = role.Contains("Admin", StringComparison.OrdinalIgnoreCase);
                         bool isStaff = isAdmin || role.Contains("Staff", StringComparison.OrdinalIgnoreCase) || role.Equals("Worker", StringComparison.OrdinalIgnoreCase);
                         bool isAccountant = isAdmin || role.Contains("Accountant", StringComparison.OrdinalIgnoreCase);
+                        bool isSoftio = username.Equals("Softio.Admin", StringComparison.OrdinalIgnoreCase);
                         return Microsoft.AspNetCore.Http.Results.Ok(new
                         {
-                            username = row["username"].ToString(),
+                            username,
                             role = role,
                             fullName = row["full_name"].ToString(),
                             isAdmin,
                             isStaff,
-                            isAccountant
+                            isAccountant,
+                            isSoftioSuperAdmin = isSoftio,
+                            features = new { scaleEnabled = FeatureFlags.ScaleEnabled }
                         });
                     }
                     catch (Exception ex)
@@ -797,7 +807,7 @@ namespace InventorySystem
                         string ext = System.IO.Path.GetExtension(file.FileName);
                         if (string.IsNullOrWhiteSpace(ext)) ext = ".png";
                         string relDir = "Assets/Products";
-                        string absDir = DatabaseConfig.ProductsImagesDirectory;
+                        string absDir = System.IO.Path.Combine(appRoot, "Assets", "Products");
                         System.IO.Directory.CreateDirectory(absDir);
                         string name = Guid.NewGuid().ToString("N") + ext.ToLowerInvariant();
                         string abs = System.IO.Path.Combine(absDir, name);
@@ -1102,7 +1112,7 @@ namespace InventorySystem
                             totalAmount,
                             validityDays = 15,
                             companyName = ThemeConfig.CompanyName,
-                            companyInfo = " Kherbit Rouha - Main Road | West Beqaa - Lebanon | Phone: +961 76 561 498 ",
+                            companyInfo = LocalizationManager.GetString("QuotePreview_CompanyInfo", ""),
                             items
                         });
                     }
@@ -2129,11 +2139,11 @@ namespace InventorySystem
                 });
 
                 // - Notifications -
-                app.MapGet("/api/notifications", () =>
+                app.MapGet("/api/notifications", (string lang) =>
                 {
                     try
                     {
-                        var list = new DashboardService().GetNotifications();
+                        var list = new DashboardService().GetNotifications(lang);
                         return Microsoft.AspNetCore.Http.Results.Ok(list.Select(n => new
                         {
                             title = n.Title,
@@ -2151,8 +2161,7 @@ namespace InventorySystem
                 {
                     try
                     {
-                        string dir = GetWebBackupDirectory();
-                        System.IO.Directory.CreateDirectory(dir);
+                        string dir = BackupService.GetBackupDirectory();
                         string tsFile = System.IO.Path.Combine(dir, "last_backup.txt");
                         string last = null;
                         if (System.IO.File.Exists(tsFile))
@@ -2161,7 +2170,72 @@ namespace InventorySystem
                             .OrderByDescending(f => f)
                             .Take(10)
                             .Select(f => new { name = System.IO.Path.GetFileName(f), path = f, modified = System.IO.File.GetLastWriteTime(f) });
-                        return Microsoft.AspNetCore.Http.Results.Ok(new { lastBackup = last, folder = dir, files });
+                        string schedule = BackupService.GetSchedule();
+                        DateTime? lastAuto = BackupService.GetLastAutoRun();
+                        return Microsoft.AspNetCore.Http.Results.Ok(new
+                        {
+                            lastBackup = last,
+                            folder = dir,
+                            defaultFolder = BackupService.GetDefaultBackupDirectory(),
+                            customFolder = BackupService.HasCustomFolder(),
+                            files,
+                            autoSchedule = schedule,
+                            lastAutoBackup = lastAuto?.ToString("o")
+                        });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPut("/api/backup/auto", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        using var doc = await System.Text.Json.JsonDocument.ParseAsync(request.Body);
+                        string schedule = doc.RootElement.TryGetProperty("schedule", out var s)
+                            ? s.GetString()
+                            : "off";
+                        BackupService.SetSchedule(schedule);
+                        return Microsoft.AspNetCore.Http.Results.Ok(new
+                        {
+                            autoSchedule = BackupService.GetSchedule(),
+                            lastAutoBackup = BackupService.GetLastAutoRun()?.ToString("o")
+                        });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/backup/choose-folder", () =>
+                {
+                    try
+                    {
+                        string folder = BackupService.PickBackupDirectory();
+                        if (string.IsNullOrWhiteSpace(folder))
+                            return Microsoft.AspNetCore.Http.Results.Ok(new
+                            {
+                                cancelled = true,
+                                folder = BackupService.GetBackupDirectory()
+                            });
+                        return Microsoft.AspNetCore.Http.Results.Ok(new
+                        {
+                            cancelled = false,
+                            folder,
+                            customFolder = BackupService.HasCustomFolder()
+                        });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/backup/reset-folder", () =>
+                {
+                    try
+                    {
+                        string folder = BackupService.SetBackupDirectory(null);
+                        return Microsoft.AspNetCore.Http.Results.Ok(new
+                        {
+                            folder,
+                            customFolder = false,
+                            defaultFolder = BackupService.GetDefaultBackupDirectory()
+                        });
                     }
                     catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
                 });
@@ -2170,17 +2244,12 @@ namespace InventorySystem
                 {
                     try
                     {
-                        string dir = GetWebBackupDirectory();
-                        System.IO.Directory.CreateDirectory(dir);
-                        string dbFile = DatabaseConfig.DatabasePath;
-                        if (!System.IO.File.Exists(dbFile))
-                            return Microsoft.AspNetCore.Http.Results.NotFound(new { error = "Database not found" });
-
-                        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
-                        string dest = System.IO.Path.Combine(dir, $"backup_{DateTime.Now:yyyyMMdd_HHmmss}.db");
-                        System.IO.File.Copy(dbFile, dest, true);
-                        System.IO.File.WriteAllText(System.IO.Path.Combine(dir, "last_backup.txt"), DateTime.Now.ToString("o"));
+                        string dest = BackupService.CreateBackup();
                         return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, file = dest });
+                    }
+                    catch (System.IO.FileNotFoundException)
+                    {
+                        return Microsoft.AspNetCore.Http.Results.NotFound(new { error = "Database not found" });
                     }
                     catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
                 });
@@ -2189,7 +2258,7 @@ namespace InventorySystem
                 {
                     try
                     {
-                        string dir = GetWebBackupDirectory();
+                        string dir = BackupService.GetBackupDirectory();
                         System.IO.Directory.CreateDirectory(dir);
                         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                         {
@@ -2213,23 +2282,14 @@ namespace InventorySystem
                         string safe = System.IO.Path.GetFileName(fileName);
                         if (!safe.StartsWith("backup_", StringComparison.OrdinalIgnoreCase))
                             return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Invalid backup file" });
-                        string src = System.IO.Path.Combine(GetWebBackupDirectory(), safe);
+                        string src = System.IO.Path.Combine(BackupService.GetBackupDirectory(), safe);
                         if (!System.IO.File.Exists(src))
                             return Microsoft.AspNetCore.Http.Results.NotFound(new { error = "Backup not found" });
                         string dbFile = DatabaseConfig.DatabasePath;
-                        string safety = System.IO.Path.Combine(GetWebBackupDirectory(), $"pre_restore_{DateTime.Now:yyyyMMdd_HHmmss}.db");
-                        try
-                        {
-                            if (System.IO.File.Exists(dbFile))
-                            {
-                                Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
-                                System.IO.File.Copy(dbFile, safety, true);
-                            }
-                        }
-                        catch { /* safety copy best-effort */ }
-                        DatabaseConfig.ReplaceDatabaseFrom(src);
-                        DatabaseInitializer.Initialize();
-                        DatabaseInitializer.EnsureSoftioSuperAdmin();
+                        string safety = System.IO.Path.Combine(BackupService.GetBackupDirectory(), $"pre_restore_{DateTime.Now:yyyyMMdd_HHmmss}.db");
+                        if (System.IO.File.Exists(dbFile))
+                            System.IO.File.Copy(dbFile, safety, true);
+                        System.IO.File.Copy(src, dbFile, true);
                         return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, restored = safe, safetyCopy = safety });
                     }
                     catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
@@ -2239,7 +2299,7 @@ namespace InventorySystem
                 {
                     try
                     {
-                        string dir = GetWebBackupDirectory();
+                        string dir = BackupService.GetBackupDirectory();
                         System.IO.Directory.CreateDirectory(dir);
                         string dbFile = DatabaseConfig.DatabasePath;
                         if (!System.IO.File.Exists(dbFile))
@@ -2264,7 +2324,7 @@ namespace InventorySystem
                         var file = form.Files.FirstOrDefault();
                         if (file == null || file.Length == 0)
                             return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "No file uploaded" });
-                        string dir = GetWebBackupDirectory();
+                        string dir = BackupService.GetBackupDirectory();
                         System.IO.Directory.CreateDirectory(dir);
                         string name = $"backup_import_{DateTime.Now:yyyyMMdd_HHmmss}.db";
                         string dest = System.IO.Path.Combine(dir, name);
@@ -2272,44 +2332,65 @@ namespace InventorySystem
                             await file.CopyToAsync(fs);
                         string dbFile = DatabaseConfig.DatabasePath;
                         string safety = System.IO.Path.Combine(dir, $"pre_import_{DateTime.Now:yyyyMMdd_HHmmss}.db");
-                        try
-                        {
-                            if (System.IO.File.Exists(dbFile))
-                            {
-                                Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
-                                System.IO.File.Copy(dbFile, safety, true);
-                            }
-                        }
-                        catch { /* safety copy best-effort */ }
-                        DatabaseConfig.ReplaceDatabaseFrom(dest);
-                        DatabaseInitializer.Initialize();
-                        DatabaseInitializer.EnsureSoftioSuperAdmin();
+                        if (System.IO.File.Exists(dbFile))
+                            System.IO.File.Copy(dbFile, safety, true);
+                        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+                        System.IO.File.Copy(dest, dbFile, true);
                         System.IO.File.WriteAllText(System.IO.Path.Combine(dir, "last_backup.txt"), DateTime.Now.ToString("o"));
                         return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, file = name, safetyCopy = safety });
                     }
                     catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
                 });
 
-                app.MapPost("/api/backup/factory-reset", () =>
+                app.MapPost("/api/backup/factory-reset", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
                 {
                     try
                     {
-                        string dir = GetWebBackupDirectory();
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<LoginPayload>(
+                            request.Body,
+                            new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (body == null || string.IsNullOrWhiteSpace(body.Username) || string.IsNullOrWhiteSpace(body.Password))
+                            return Microsoft.AspNetCore.Http.Results.Json(
+                                new { error = "Admin credentials required." },
+                                statusCode: 403);
+
+                        bool isAdmin = body.Username.Trim().Equals("Softio.Admin", StringComparison.OrdinalIgnoreCase)
+                            && body.Password == "Softio@2026!";
+                        if (!isAdmin)
+                        {
+                            var dt = DatabaseHelper.ExecuteDataTable(
+                                "SELECT role FROM users WHERE username = @u AND password = @p",
+                                new Microsoft.Data.Sqlite.SqliteParameter("@u", body.Username.Trim()),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@p", body.Password));
+                            if (dt.Rows.Count == 0)
+                                return Microsoft.AspNetCore.Http.Results.Json(
+                                    new { error = "Invalid admin credentials." },
+                                    statusCode: 403);
+                            string role = dt.Rows[0]["role"]?.ToString() ?? "";
+                            isAdmin = role.Contains("Admin", StringComparison.OrdinalIgnoreCase);
+                        }
+                        if (!isAdmin)
+                            return Microsoft.AspNetCore.Http.Results.Json(
+                                new { error = "Only administrators can perform a factory reset." },
+                                statusCode: 403);
+
+                        string dir = BackupService.GetBackupDirectory();
                         System.IO.Directory.CreateDirectory(dir);
                         string dbFile = DatabaseConfig.DatabasePath;
-                        // Best-effort safety copy to LocalAppData (writable even under Program Files)
                         if (System.IO.File.Exists(dbFile))
                         {
-                            try
-                            {
-                                Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
-                                string safety = System.IO.Path.Combine(dir, $"pre_factory_{DateTime.Now:yyyyMMdd_HHmmss}.db");
-                                System.IO.File.Copy(dbFile, safety, true);
-                            }
-                            catch { /* safety copy is optional */ }
+                            string safety = System.IO.Path.Combine(dir, $"pre_factory_{DateTime.Now:yyyyMMdd_HHmmss}.db");
+                            System.IO.File.Copy(dbFile, safety, true);
                         }
-                        // Wipe tables in-place (do not delete inventory.db — fails on locked/Program Files installs)
-                        DatabaseInitializer.FactoryReset();
+                        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+                        if (System.IO.File.Exists(dbFile))
+                            System.IO.File.Delete(dbFile);
+                        string dataDir = System.IO.Path.GetDirectoryName(dbFile);
+                        if (!string.IsNullOrEmpty(dataDir))
+                            System.IO.Directory.CreateDirectory(dataDir);
+                        // Rebuild empty schema and always re-create Softio Super Admin
+                        DatabaseInitializer.Initialize();
+                        DatabaseInitializer.EnsureSoftioSuperAdmin();
                         return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
                     }
                     catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
@@ -2339,8 +2420,166 @@ namespace InventorySystem
                     catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
                 });
 
-                // Scale API is a no-op on Generic main (full support on `scale` branch)
+                // Scale API (TM-A17 / COM) — gated by Softio feature flag at runtime
                 ScaleApiBootstrap.MapEndpoints(app);
+
+                // Feature flags (scale on/off — Softio Super Admin only for writes)
+                app.MapGet("/api/features", () =>
+                    Microsoft.AspNetCore.Http.Results.Ok(new
+                    {
+                        scaleEnabled = FeatureFlags.ScaleEnabled
+                    }));
+
+                app.MapPut("/api/features/scale", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<ScaleFeaturePayload>(
+                            request.Body,
+                            new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (body == null)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Invalid body" });
+
+                        bool isSoftio = !string.IsNullOrWhiteSpace(body.Username)
+                            && body.Username.Trim().Equals("Softio.Admin", StringComparison.OrdinalIgnoreCase);
+                        if (!isSoftio)
+                            return Microsoft.AspNetCore.Http.Results.Json(
+                                new { error = "Only Softio Super Admin can change this setting." },
+                                statusCode: 403);
+
+                        FeatureFlags.ScaleEnabled = body.Enabled;
+                        if (!body.Enabled)
+                        {
+                            try { ScaleService.Instance.Disconnect(); } catch { }
+                        }
+                        else if (ScaleService.Instance.Config.AutoConnect)
+                        {
+                            try { ScaleService.Instance.Connect(); } catch { }
+                        }
+
+                        return Microsoft.AspNetCore.Http.Results.Ok(new
+                        {
+                            success = true,
+                            scaleEnabled = FeatureFlags.ScaleEnabled
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        return Microsoft.AspNetCore.Http.Results.Problem(ex.Message);
+                    }
+                });
+
+                // Print dimensions (label + receipt) — any authenticated desktop client
+                app.MapGet("/api/print-settings", () =>
+                {
+                    var s = PrintSettings.GetSnapshot();
+                    return Microsoft.AspNetCore.Http.Results.Ok(ToPrintSettingsDto(s));
+                });
+
+                app.MapPut("/api/print-settings", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<PrintSettingsPayload>(
+                            request.Body,
+                            new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (body == null)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Invalid body" });
+
+                        var snap = new PrintSettingsSnapshot
+                        {
+                            LabelWidthMm = body.LabelWidthMm > 0 ? body.LabelWidthMm : PrintSettings.DefaultLabelWidthMm,
+                            LabelHeightMm = body.LabelHeightMm > 0 ? body.LabelHeightMm : PrintSettings.DefaultLabelHeightMm,
+                            LabelGapMm = body.LabelGapMm >= 0 ? body.LabelGapMm : PrintSettings.DefaultLabelGapMm,
+                            LabelMarginMm = body.LabelMarginMm >= 0 ? body.LabelMarginMm : PrintSettings.DefaultLabelMarginMm,
+                            LabelMarginTopMm = body.LabelMarginTopMm >= 0 ? body.LabelMarginTopMm
+                                : (body.LabelMarginMm >= 0 ? body.LabelMarginMm : PrintSettings.DefaultLabelMarginMm),
+                            LabelMarginRightMm = body.LabelMarginRightMm >= 0 ? body.LabelMarginRightMm
+                                : (body.LabelMarginMm >= 0 ? body.LabelMarginMm : PrintSettings.DefaultLabelMarginMm),
+                            LabelMarginBottomMm = body.LabelMarginBottomMm >= 0 ? body.LabelMarginBottomMm
+                                : (body.LabelMarginMm >= 0 ? body.LabelMarginMm : PrintSettings.DefaultLabelMarginMm),
+                            LabelMarginLeftMm = body.LabelMarginLeftMm >= 0 ? body.LabelMarginLeftMm
+                                : (body.LabelMarginMm >= 0 ? body.LabelMarginMm : PrintSettings.DefaultLabelMarginMm),
+                            LabelColumns = body.LabelColumns >= 0 ? body.LabelColumns : PrintSettings.DefaultLabelColumns,
+                            LabelPaperMode = string.IsNullOrWhiteSpace(body.LabelPaperMode)
+                                ? PrintSettings.DefaultLabelPaperMode
+                                : body.LabelPaperMode,
+                            LabelPageWidthMm = body.LabelPageWidthMm > 0 ? body.LabelPageWidthMm : PrintSettings.DefaultLabelPageWidthMm,
+                            LabelPageHeightMm = body.LabelPageHeightMm > 0 ? body.LabelPageHeightMm : PrintSettings.DefaultLabelPageHeightMm,
+                            ReceiptWidthMm = body.ReceiptWidthMm > 0 ? body.ReceiptWidthMm : PrintSettings.DefaultReceiptWidthMm,
+                            ReceiptHeightMm = body.ReceiptHeightMm >= 0 ? body.ReceiptHeightMm : PrintSettings.DefaultReceiptHeightMm,
+                            ReceiptMarginMm = body.ReceiptMarginMm >= 0 ? body.ReceiptMarginMm : PrintSettings.DefaultReceiptMarginMm,
+                            ReceiptMarginTopMm = body.ReceiptMarginTopMm >= 0 ? body.ReceiptMarginTopMm
+                                : (body.ReceiptMarginMm >= 0 ? body.ReceiptMarginMm : PrintSettings.DefaultReceiptMarginMm),
+                            ReceiptMarginRightMm = body.ReceiptMarginRightMm >= 0 ? body.ReceiptMarginRightMm
+                                : (body.ReceiptMarginMm >= 0 ? body.ReceiptMarginMm : PrintSettings.DefaultReceiptMarginMm),
+                            ReceiptMarginBottomMm = body.ReceiptMarginBottomMm >= 0 ? body.ReceiptMarginBottomMm
+                                : (body.ReceiptMarginMm >= 0 ? body.ReceiptMarginMm : PrintSettings.DefaultReceiptMarginMm),
+                            ReceiptMarginLeftMm = body.ReceiptMarginLeftMm >= 0 ? body.ReceiptMarginLeftMm
+                                : (body.ReceiptMarginMm >= 0 ? body.ReceiptMarginMm : PrintSettings.DefaultReceiptMarginMm),
+                            LabelPrinter = body.LabelPrinter ?? "",
+                            ReceiptPrinter = body.ReceiptPrinter ?? ""
+                        };
+                        PrintSettings.Save(snap);
+                        return Microsoft.AspNetCore.Http.Results.Ok(ToPrintSettingsDto(PrintSettings.GetSnapshot(), true));
+                    }
+                    catch (Exception ex)
+                    {
+                        return Microsoft.AspNetCore.Http.Results.Problem(ex.Message);
+                    }
+                });
+
+                app.MapPut("/api/print-settings/printer-profile", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<PrinterProfilePayload>(
+                            request.Body,
+                            new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (body == null || string.IsNullOrWhiteSpace(body.PrinterName))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "printerName required" });
+
+                        var profile = new PrinterJobProfile
+                        {
+                            WidthMm = body.WidthMm,
+                            HeightMm = body.HeightMm,
+                            GapMm = body.GapMm,
+                            MarginMm = body.MarginMm,
+                            MarginTopMm = body.MarginTopMm,
+                            MarginRightMm = body.MarginRightMm,
+                            MarginBottomMm = body.MarginBottomMm,
+                            MarginLeftMm = body.MarginLeftMm,
+                            Columns = body.Columns,
+                            PaperMode = body.PaperMode,
+                            PageWidthMm = body.PageWidthMm,
+                            PageHeightMm = body.PageHeightMm
+                        };
+                        var saved = PrintSettings.SavePrinterProfile(body.PrinterName, body.JobType ?? "label", profile);
+                        return Microsoft.AspNetCore.Http.Results.Ok(ToPrintSettingsDto(saved, true));
+                    }
+                    catch (Exception ex)
+                    {
+                        return Microsoft.AspNetCore.Http.Results.Problem(ex.Message);
+                    }
+                });
+
+                app.MapDelete("/api/print-settings/printer-profile", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        string name = request.Query["printerName"].ToString();
+                        bool clearAll = string.Equals(request.Query["all"].ToString(), "1", StringComparison.OrdinalIgnoreCase)
+                            || string.Equals(request.Query["all"].ToString(), "true", StringComparison.OrdinalIgnoreCase);
+                        var saved = clearAll
+                            ? PrintSettings.ClearAllPrinterProfiles()
+                            : PrintSettings.DeletePrinterProfile(name);
+                        return Microsoft.AspNetCore.Http.Results.Ok(ToPrintSettingsDto(saved, true));
+                    }
+                    catch (Exception ex)
+                    {
+                        return Microsoft.AspNetCore.Http.Results.Problem(ex.Message);
+                    }
+                });
 
                 // Ports are configured via Kestrel above
                 app.Run();
@@ -2352,13 +2591,26 @@ namespace InventorySystem
         }
 
 
-        private static string GetWebBackupDirectory()
+        private static string ResolveAppRoot()
         {
-            string root = System.IO.Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "A2ZTech", "Backups");
-            return root;
+            string[] candidates =
+            {
+                Application.StartupPath,
+                AppContext.BaseDirectory,
+                System.IO.Path.GetDirectoryName(Environment.ProcessPath)
+            };
+            foreach (string c in candidates)
+            {
+                if (string.IsNullOrWhiteSpace(c)) continue;
+                if (System.IO.Directory.Exists(System.IO.Path.Combine(c, "wwwroot")))
+                    return c;
+            }
+            return string.IsNullOrWhiteSpace(Application.StartupPath)
+                ? AppContext.BaseDirectory
+                : Application.StartupPath;
         }
+
+        private static string GetWebBackupDirectory() => BackupService.GetBackupDirectory();
 
         // Payload models for API
         private class LoginPayload
@@ -2427,7 +2679,7 @@ namespace InventorySystem
         private static InventorySystem.Data.PartData MapProductPayload(ProductPayload body, int id)
         {
             bool inactive = body.IsInactive;
-            bool byWeight = body.SellByWeight && !string.Equals(body.ItemType, "Service", StringComparison.OrdinalIgnoreCase);
+            bool byWeight = FeatureFlags.ScaleEnabled && body.SellByWeight;
             string uom = body.Uom ?? "";
             if (byWeight && string.IsNullOrWhiteSpace(uom)) uom = "kg";
             return new InventorySystem.Data.PartData
@@ -2460,6 +2712,123 @@ namespace InventorySystem
                 PartImage = body.Image,
                 SupplierId = body.SupplierId,
                 Status = inactive ? "Inactive" : "Active"
+            };
+        }
+
+        private class ScaleFeaturePayload
+        {
+            public bool Enabled { get; set; }
+            public string Username { get; set; }
+        }
+
+        private class PrintSettingsPayload
+        {
+            public double LabelWidthMm { get; set; }
+            public double LabelHeightMm { get; set; }
+            public double LabelGapMm { get; set; } = -1;
+            public double LabelMarginMm { get; set; } = -1;
+            public double LabelMarginTopMm { get; set; } = -1;
+            public double LabelMarginRightMm { get; set; } = -1;
+            public double LabelMarginBottomMm { get; set; } = -1;
+            public double LabelMarginLeftMm { get; set; } = -1;
+            public int LabelColumns { get; set; } = -1;
+            public string LabelPaperMode { get; set; }
+            public double LabelPageWidthMm { get; set; }
+            public double LabelPageHeightMm { get; set; }
+            public double ReceiptWidthMm { get; set; }
+            public double ReceiptHeightMm { get; set; } = -1;
+            public double ReceiptMarginMm { get; set; } = -1;
+            public double ReceiptMarginTopMm { get; set; } = -1;
+            public double ReceiptMarginRightMm { get; set; } = -1;
+            public double ReceiptMarginBottomMm { get; set; } = -1;
+            public double ReceiptMarginLeftMm { get; set; } = -1;
+            public string LabelPrinter { get; set; }
+            public string ReceiptPrinter { get; set; }
+        }
+
+        private class PrinterProfilePayload
+        {
+            public string PrinterName { get; set; }
+            public string JobType { get; set; }
+            public double WidthMm { get; set; }
+            public double HeightMm { get; set; }
+            public double GapMm { get; set; } = -1;
+            public double MarginMm { get; set; } = -1;
+            public double MarginTopMm { get; set; } = -1;
+            public double MarginRightMm { get; set; } = -1;
+            public double MarginBottomMm { get; set; } = -1;
+            public double MarginLeftMm { get; set; } = -1;
+            public int Columns { get; set; }
+            public string PaperMode { get; set; }
+            public double PageWidthMm { get; set; }
+            public double PageHeightMm { get; set; }
+        }
+
+        private static object ProfileMargins(PrinterJobProfile p) => p == null ? null : new
+        {
+            widthMm = p.WidthMm,
+            heightMm = p.HeightMm,
+            gapMm = p.GapMm,
+            marginMm = p.MarginMm,
+            marginTopMm = p.MarginTopMm,
+            marginRightMm = p.MarginRightMm,
+            marginBottomMm = p.MarginBottomMm,
+            marginLeftMm = p.MarginLeftMm,
+            columns = p.Columns,
+            paperMode = p.PaperMode,
+            pageWidthMm = p.PageWidthMm,
+            pageHeightMm = p.PageHeightMm
+        };
+
+        private static object ToPrintSettingsDto(PrintSettingsSnapshot s, bool success = false)
+        {
+            var profiles = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+            if (s?.PrinterProfiles != null)
+            {
+                foreach (var kv in s.PrinterProfiles)
+                {
+                    profiles[kv.Key] = new
+                    {
+                        label = kv.Value?.Label == null ? null : ProfileMargins(kv.Value.Label),
+                        receipt = kv.Value?.Receipt == null ? null : new
+                        {
+                            widthMm = kv.Value.Receipt.WidthMm,
+                            heightMm = kv.Value.Receipt.HeightMm,
+                            marginMm = kv.Value.Receipt.MarginMm,
+                            marginTopMm = kv.Value.Receipt.MarginTopMm,
+                            marginRightMm = kv.Value.Receipt.MarginRightMm,
+                            marginBottomMm = kv.Value.Receipt.MarginBottomMm,
+                            marginLeftMm = kv.Value.Receipt.MarginLeftMm
+                        }
+                    };
+                }
+            }
+
+            return new
+            {
+                success,
+                labelWidthMm = s.LabelWidthMm,
+                labelHeightMm = s.LabelHeightMm,
+                labelGapMm = s.LabelGapMm,
+                labelMarginMm = s.LabelMarginMm,
+                labelMarginTopMm = s.LabelMarginTopMm,
+                labelMarginRightMm = s.LabelMarginRightMm,
+                labelMarginBottomMm = s.LabelMarginBottomMm,
+                labelMarginLeftMm = s.LabelMarginLeftMm,
+                labelColumns = s.LabelColumns,
+                labelPaperMode = s.LabelPaperMode,
+                labelPageWidthMm = s.LabelPageWidthMm,
+                labelPageHeightMm = s.LabelPageHeightMm,
+                receiptWidthMm = s.ReceiptWidthMm,
+                receiptHeightMm = s.ReceiptHeightMm,
+                receiptMarginMm = s.ReceiptMarginMm,
+                receiptMarginTopMm = s.ReceiptMarginTopMm,
+                receiptMarginRightMm = s.ReceiptMarginRightMm,
+                receiptMarginBottomMm = s.ReceiptMarginBottomMm,
+                receiptMarginLeftMm = s.ReceiptMarginLeftMm,
+                labelPrinter = s.LabelPrinter ?? "",
+                receiptPrinter = s.ReceiptPrinter ?? "",
+                printerProfiles = profiles
             };
         }
 

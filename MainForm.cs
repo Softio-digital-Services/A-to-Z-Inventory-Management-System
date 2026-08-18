@@ -354,8 +354,8 @@ namespace InventorySystem
             {
                 Name = "lblSidebarBrand",
                 Dock = DockStyle.Fill,
-                Text = "a2z Tech",
-                Font = new Font("Segoe UI Semibold", 14f, FontStyle.Bold),
+                Text = ThemeConfig.CompanyName,
+                Font = new Font("Segoe UI", 16F, FontStyle.Bold),
                 ForeColor = ThemeConfig.PrimaryColor,
                 TextAlign = ContentAlignment.MiddleCenter,
                 BackColor = Color.Transparent
@@ -425,8 +425,8 @@ namespace InventorySystem
             if (isAdmin || isWorker || isAccountant) AddNavButton(pnlNav, "Nav_Inventory", "inventory", "btnInventory", () => ShowForm(partsForm));
             if (isAdmin || isWorker) AddNavButton(pnlNav, "Nav_POS", "pos", "btnPOS", () => ShowForm(posForm));
 
-            // Accountants & Admins
-            if (isAdmin || isAccountant)
+            // Reports & History — admin, staff, accountant
+            if (isAdmin || isWorker || isAccountant)
             {
                 AddNavButton(pnlNav, "Nav_Reports", "reports", "btnReports", () => { reportsForm.RefreshData(); ShowForm(reportsForm); });
                 AddNavButton(pnlNav, "Nav_History", "history", "btnHistory", () => { historyForm.LoadHistory(); ShowForm(historyForm); });
@@ -681,7 +681,7 @@ namespace InventorySystem
             {
                 foreach (var n in notifications)
                 {
-                    var item = new ToolStripMenuItem($"{n.Title}: {n.Message}") { Tag = n, Font = ThemeConfig.StandardFont, Image = ThemeConfig.GetNuricon(n.Type == "LowStock" ? "warning" : "check") };
+                    var item = new ToolStripMenuItem($"{n.Title}: {n.Message}") { Tag = n, Font = ThemeConfig.StandardFont, Image = ThemeConfig.GetNuricon(n.Type == "LowStock" || n.Type == "OutOfStock" ? "warning" : "check") };
                     item.Click += (s, ev) =>
                     {
                         if (n.Target == "btnInventory") ShowForm(partsForm);
@@ -708,7 +708,7 @@ namespace InventorySystem
         private void RefreshNotificationBadge()
         {
             int oldCount = _alertCount;
-            _alertCount = _dashboardService.GetLowStockCount() + _dashboardService.GetPaymentRemindersCount() + _dashboardService.GetUnpaidExpensesCount();
+            _alertCount = _dashboardService.GetLowStockCount();
             if (oldCount != _alertCount && pbNotification != null) pbNotification.Invalidate();
         }
 
@@ -840,17 +840,11 @@ namespace InventorySystem
             bool isAccountant = UserSession.Role == "Accountant";
 
             // Sidebar Buttons Hide Logic
-            SetNavVisibility("btnReports", isAdmin);
+            SetNavVisibility("btnReports", isAdmin || isStaff || isAccountant);
             SetNavVisibility("btnCurrencies", isAdmin);
-            SetNavVisibility("btnHistory", isAdmin || isAccountant);
-            SetNavVisibility("btnQuotations", isAdmin || isAccountant);
-            SetNavVisibility("btnExpenses", isAdmin || isAccountant);
-
-            if (isStaff)
-            {
-                SetNavVisibility("btnCustomers", false);
-                SetNavVisibility("btnSuppliers", false);
-            }
+            SetNavVisibility("btnHistory", isAdmin || isStaff || isAccountant);
+            SetNavVisibility("btnQuotations", isAdmin || isStaff || isAccountant);
+            SetNavVisibility("btnExpenses", isAdmin || isStaff || isAccountant);
 
             if (isAccountant)
             {

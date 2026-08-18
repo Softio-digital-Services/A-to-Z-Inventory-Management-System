@@ -120,20 +120,23 @@ namespace InventorySystem
             // Background
             this.tableLayoutPanel1.BackColor = ThemeConfig.BackgroundColor; 
             
-            // Brand name (text / custom logo)
-            Label lblBrand = new Label();
-            lblBrand.Text = "a2z Tech";
-            lblBrand.Font = new Font("Segoe UI Semibold", 22f, FontStyle.Bold);
-            lblBrand.ForeColor = ThemeConfig.PrimaryColor;
-            lblBrand.AutoSize = true;
-            lblBrand.Anchor = AnchorStyles.Top;
+            // Brand name
+            Label lblBrand = new Label
+            {
+                Text = ThemeConfig.CompanyName,
+                AutoSize = false,
+                Size = new Size(200, 48),
+                Font = new Font("Segoe UI", 22F, FontStyle.Bold),
+                ForeColor = ThemeConfig.PrimaryColor,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Anchor = AnchorStyles.Top
+            };
             panelLoginCard.Controls.Add(lblBrand);
 
-            // Center brand on Resize
             panelLoginCard.Resize += (s, e) => {
-                lblBrand.Location = new Point((panelLoginCard.Width - lblBrand.Width) / 2, 40);
+                lblBrand.Location = new Point((panelLoginCard.Width - lblBrand.Width) / 2, 36);
             };
-            lblBrand.Location = new Point((panelLoginCard.Width - lblBrand.Width) / 2, 40);
+            lblBrand.Location = new Point((panelLoginCard.Width - lblBrand.Width) / 2, 36);
 
             labelTitle.Top = 145;
             labelSubtitle.Top = 195;

@@ -27,6 +27,8 @@ namespace InventorySystem.Helpers
             // Ensure Softio Super Admin always exists
             EnsureSoftioSuperAdmin();
 
+            FeatureFlags.EnsureTable();
+
             // Repair: Standardise status values (fix Arabic UI bug)
             DatabaseHelper.ExecuteNonQuery(
                 "UPDATE parts SET status = 'Active' WHERE status NOT IN ('Active', 'Inactive') AND date_deleted IS NULL;"
@@ -60,45 +62,6 @@ namespace InventorySystem.Helpers
         {
             return !string.IsNullOrWhiteSpace(username)
                 && username.Trim().Equals("Softio.Admin", StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
-        /// Wipes all business data by dropping user tables and rebuilding schema.
-        /// Does not delete the SQLite file (works under Program Files installs).
-        /// </summary>
-        public static void FactoryReset()
-        {
-            SqliteConnection.ClearAllPools();
-            try { DatabaseHelper.ExecuteNonQuery("PRAGMA wal_checkpoint(TRUNCATE);"); } catch { /* best effort */ }
-
-            var tables = DatabaseHelper.ExecuteQuery(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
-                r => r.GetString(0));
-
-            foreach (string name in tables)
-            {
-                if (string.IsNullOrWhiteSpace(name)) continue;
-                string safe = name.Replace("\"", "\"\"");
-                DatabaseHelper.ExecuteNonQuery($"DROP TABLE IF EXISTS \"{safe}\";");
-            }
-
-            SqliteConnection.ClearAllPools();
-            Initialize();
-            EnsureSoftioSuperAdmin();
-
-            // Clear product images so the install matches a fresh empty DB
-            try
-            {
-                string imagesPath = DatabaseConfig.PartsImagesDirectory;
-                if (Directory.Exists(imagesPath))
-                {
-                    foreach (string file in Directory.GetFiles(imagesPath))
-                    {
-                        try { File.Delete(file); } catch { /* ignore locked images */ }
-                    }
-                }
-            }
-            catch { /* non-fatal */ }
         }
 
         /// <summary>

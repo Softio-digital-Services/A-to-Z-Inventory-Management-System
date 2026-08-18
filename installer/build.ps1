@@ -9,25 +9,32 @@ $iss = Join-Path $PSScriptRoot "A2ZTech.iss"
 $csproj = Join-Path $root "A2ZTech.csproj"
 
 Write-Host "==> Publishing self-contained Release (win-x64)..." -ForegroundColor Cyan
-# If a running app locks dist\app\Data\inventory.db, move Data aside so publish can clean.
-$dataDir = Join-Path $publishDir "Data"
-$dataBackup = Join-Path $distDir "_Data_build_backup"
-if (Test-Path $dataDir) {
-    if (Test-Path $dataBackup) { Remove-Item $dataBackup -Recurse -Force -ErrorAction SilentlyContinue }
-    try {
-        Move-Item -Path $dataDir -Destination $dataBackup -Force
-        Write-Host "Moved locked Data aside for rebuild." -ForegroundColor Yellow
-    } catch {
-        Write-Host "Could not move Data (may be locked): $_" -ForegroundColor Yellow
-    }
-}
 if (Test-Path $publishDir) { Remove-Item $publishDir -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $publishDir | Out-Null
 
 dotnet publish $csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -o $publishDir
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed" }
 
-Write-Host "==> Looking for Inno Setup (ISCC)..." -ForegroundColor Cyan
+Write-Host "==> Publishing portable single-file exe..." -ForegroundColor Cyan
+$singleDir = Join-Path $root "dist\_single"
+$portableExe = Join-Path $distDir "A2ZTech-Portable.exe"
+if (Test-Path $singleDir) { Remove-Item $singleDir -Recurse -Force }
+New-Item -ItemType Directory -Force -Path $distDir | Out-Null
+New-Item -ItemType Directory -Force -Path $singleDir | Out-Null
+dotnet publish $csproj -c Release -r win-x64 --self-contained true `
+    -p:PublishSingleFile=true `
+    -p:IncludeNativeLibrariesForSelfExtract=true `
+    -p:IncludeAllContentForSelfExtract=true `
+    -p:EnableCompressionInSingleFile=true `
+    -o $singleDir
+if ($LASTEXITCODE -ne 0) { throw "dotnet publish (single-file) failed" }
+$publishedExe = Join-Path $singleDir "A2ZTech.exe"
+if (-not (Test-Path $publishedExe)) { throw "Single-file exe not found: $publishedExe" }
+Copy-Item $publishedExe $portableExe -Force
+Remove-Item $singleDir -Recurse -Force
+Write-Host "Portable app: $portableExe" -ForegroundColor Green
+
+Write-Host "==> Looking for Inno Setup 6.4+ (ISCC)..." -ForegroundColor Cyan
 $pf86 = ${env:ProgramFiles(x86)}
 $pf = $env:ProgramFiles
 $lad = $env:LocalAppData
@@ -42,14 +49,9 @@ $iscc = $isccCandidates | Where-Object { $_ -and (Test-Path $_) } | Select-Objec
 
 New-Item -ItemType Directory -Force -Path $distDir | Out-Null
 
-# Remove obsolete installer/portable names if present
-@(
-    (Join-Path $distDir "PanacheSetup.exe"),
-    (Join-Path $distDir "PanacheInventory-Portable.zip")
-) | ForEach-Object { if (Test-Path $_) { Remove-Item $_ -Force } }
-
 if ($iscc) {
     Write-Host "==> Building Setup.exe with $iscc" -ForegroundColor Cyan
+    Write-Host "    (Setup will auto-install WebView2 on PCs that need it)" -ForegroundColor DarkGray
     & $iscc $iss
     if ($LASTEXITCODE -ne 0) { throw "ISCC failed" }
     $setup = Get-ChildItem $distDir -Filter "A2ZTechSetup.exe" | Select-Object -First 1
@@ -57,6 +59,8 @@ if ($iscc) {
         Write-Host ""
         Write-Host "SUCCESS - give buyers this file:" -ForegroundColor Green
         Write-Host $setup.FullName -ForegroundColor Green
+        Write-Host ""
+        Write-Host "Target PC needs: Windows 10/11 64-bit. WebView2 is installed by setup if missing." -ForegroundColor Cyan
     }
 }
 else {
@@ -70,15 +74,5 @@ else {
 
 Write-Host ""
 Write-Host "Published app folder: $publishDir"
+Write-Host "Portable exe: $(Join-Path $distDir 'A2ZTech-Portable.exe')"
 Write-Host "Run locally: $(Join-Path $publishDir 'A2ZTech.exe')"
-
-# Restore local Data after publish so developer DB is kept
-if (Test-Path $dataBackup) {
-    $restoredData = Join-Path $publishDir "Data"
-    if (-not (Test-Path $restoredData)) {
-        Move-Item -Path $dataBackup -Destination $restoredData -Force
-        Write-Host "Restored local Data folder." -ForegroundColor Yellow
-    } else {
-        Remove-Item $dataBackup -Recurse -Force -ErrorAction SilentlyContinue
-    }
-}

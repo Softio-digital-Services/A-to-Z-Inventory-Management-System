@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("a2z Tech")]
-[assembly: AssemblyDescription("a2z Tech Inventory Management System")]
+[assembly: AssemblyTitle("InventorySystem")]
+[assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Softio Services")]
-[assembly: AssemblyProduct("a2z Tech")]
-[assembly: AssemblyCopyright("Copyright (c) Softio Services")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("InventorySystem")]
+[assembly: AssemblyCopyright("Copyright (c)  2023")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

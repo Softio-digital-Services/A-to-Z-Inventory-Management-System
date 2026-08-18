@@ -15,13 +15,13 @@ using Microsoft.Web.WebView2.WinForms;
 namespace InventorySystem
 {
     /// <summary>
-    /// Borderless desktop host embedding the a2z Tech web UI.
+    /// Borderless desktop host embedding the branded web UI.
     /// Sized to the screen WorkingArea so the Windows taskbar stays visible.
     /// </summary>
     public class WebServerHostForm : Form
     {
-        private const string PortalUrl = "http://127.0.0.1:5000/";
-        private static readonly Color BrandColor = Color.FromArgb(56, 189, 248); // Light blue
+        private static string PortalUrl => AppHostConfig.LoopbackUrl;
+        private static readonly Color BrandColor = ThemeConfig.PrimaryColor;
 
         private readonly WebView2 _webView;
         private readonly Panel _splash;
@@ -42,7 +42,7 @@ namespace InventorySystem
 
         public WebServerHostForm()
         {
-            Text = "a2z Tech";
+            Text = ThemeConfig.AppTitle;
             MinimumSize = new Size(960, 640);
             StartPosition = FormStartPosition.Manual;
             BackColor = BrandColor;
@@ -62,9 +62,7 @@ namespace InventorySystem
             FitToWorkingArea();
 
             // Start WebView2 environment immediately (parallel with server boot)
-            var userData = System.IO.Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "A2ZTech", "WebView2");
+            var userData = System.IO.Path.Combine(DatabaseConfig.UserDataDirectory, "WebView2");
             try { _envTask = CoreWebView2Environment.CreateAsync(null, userData); }
             catch { _envTask = null; }
 
@@ -88,16 +86,34 @@ namespace InventorySystem
 
             try
             {
-                var brand = new Label
+                string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "logo.png");
+                if (System.IO.File.Exists(logoPath))
                 {
-                    AutoSize = true,
-                    Text = "a2z Tech",
-                    Font = new Font("Segoe UI Semibold", 28f, FontStyle.Bold),
-                    ForeColor = Color.White,
-                    BackColor = Color.Transparent
-                };
-                _logoControl = brand;
-                _splash.Controls.Add(brand);
+                    var pb = new PictureBox
+                    {
+                        Size = new Size(168, 168),
+                        SizeMode = PictureBoxSizeMode.Zoom,
+                        BackColor = Color.White,
+                        Image = Image.FromFile(logoPath)
+                    };
+                    _logoControl = pb;
+                    _splash.Controls.Add(pb);
+                }
+                else
+                {
+                    var brand = new Label
+                    {
+                        AutoSize = false,
+                        Size = new Size(280, 72),
+                        Text = ThemeConfig.CompanyName,
+                        Font = new Font("Segoe UI", 32f, FontStyle.Bold),
+                        ForeColor = Color.White,
+                        BackColor = Color.Transparent,
+                        TextAlign = ContentAlignment.MiddleCenter
+                    };
+                    _logoControl = brand;
+                    _splash.Controls.Add(brand);
+                }
             }
             catch
             {
@@ -137,8 +153,10 @@ namespace InventorySystem
             int top = Math.Max(0, (_splash.Height - totalH) / 2);
             _logoControl.Left = (_splash.Width - _logoControl.Width) / 2;
             _logoControl.Top = top;
-            if (_logoControl is not Label)
-                ApplyRoundedCorners(_logoControl, _logoControl is PictureBox ? 28 : 24);
+            if (_logoControl is PictureBox)
+                ApplyRoundedCorners(_logoControl, 28);
+            else
+                ApplyRoundedCorners(_logoControl, 24);
             _spinner.Left = (_splash.Width - _spinner.Width) / 2;
             _spinner.Top = _logoControl.Bottom + gap;
         }
@@ -268,15 +286,13 @@ namespace InventorySystem
                 }
                 if (env == null)
                 {
-                    var userData = System.IO.Path.Combine(
-                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                        "A2ZTech", "WebView2");
+                    var userData = System.IO.Path.Combine(DatabaseConfig.UserDataDirectory, "WebView2");
                     env = await CoreWebView2Environment.CreateAsync(null, userData);
                 }
 
                 if (!await readyTask)
                 {
-                    ShowFatal("a2z Tech could not start the local service.\nPlease restart the application.");
+                    ShowFatal(ThemeConfig.CompanyName + " could not start the local service.\nPlease restart the application.");
                     return;
                 }
 
@@ -285,6 +301,8 @@ namespace InventorySystem
                 _webView.CoreWebView2.Settings.IsStatusBarEnabled = false;
                 _webView.CoreWebView2.Settings.AreDevToolsEnabled = false;
                 _webView.CoreWebView2.Settings.IsZoomControlEnabled = false;
+                _webView.CoreWebView2.Settings.IsGeneralAutofillEnabled = false;
+                _webView.CoreWebView2.Settings.IsPasswordAutosaveEnabled = false;
 
                 _webView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
 
@@ -300,7 +318,7 @@ namespace InventorySystem
 
                 if (!ok)
                 {
-                    ShowFatal("a2z Tech failed to load the interface.\nPlease restart the application.");
+                    ShowFatal(ThemeConfig.CompanyName + " failed to load the interface.\nPlease restart the application.");
                     return;
                 }
 
@@ -327,7 +345,7 @@ namespace InventorySystem
             }
             catch (Exception ex)
             {
-                ShowFatal("a2z Tech failed to open:\n" + ex.Message);
+                ShowFatal(ThemeConfig.CompanyName + " failed to open:\n" + ex.Message);
             }
         }
 
@@ -477,29 +495,11 @@ namespace InventorySystem
                 }
                 catch { }
 
-                var profiles = new Dictionary<string, object>();
-                foreach (var name in printers)
-                {
-                    var p = PrinterProfileStore.Get(name);
-                    profiles[name] = new
-                    {
-                        receiptProtocol = p.ReceiptProtocol ?? "auto",
-                        labelProtocol = p.LabelProtocol ?? "auto",
-                        labelWidthMm = p.LabelWidthMm,
-                        labelHeightMm = p.LabelHeightMm,
-                        labelGapMm = p.LabelGapMm
-                    };
-                }
-
-                var payload = new
-                {
-                    type = "printers",
-                    printers,
-                    defaultPrinter = defaultPrinter ?? "",
-                    profiles
-                };
+                var namesJson = string.Join(",", printers.Select(p =>
+                    "\"" + p.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\""));
+                var defEsc = (defaultPrinter ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"");
                 _webView?.CoreWebView2?.PostWebMessageAsJson(
-                    JsonSerializer.Serialize(payload));
+                    $"{{\"type\":\"printers\",\"printers\":[{namesJson}],\"defaultPrinter\":\"{defEsc}\"}}");
             }
             catch { }
         }
@@ -545,14 +545,6 @@ namespace InventorySystem
                 var options = new LabelPrintOptions();
                 if (root.TryGetProperty("printerName", out var pn) && pn.ValueKind == JsonValueKind.String)
                     options.PrinterName = pn.GetString();
-                if (root.TryGetProperty("protocol", out var proto) && proto.ValueKind == JsonValueKind.String)
-                    options.Protocol = proto.GetString();
-                if (root.TryGetProperty("labelWidthMm", out var lw) && lw.ValueKind == JsonValueKind.Number)
-                    options.LabelWidthMm = lw.GetDouble();
-                if (root.TryGetProperty("labelHeightMm", out var lh) && lh.ValueKind == JsonValueKind.Number)
-                    options.LabelHeightMm = lh.GetDouble();
-                if (root.TryGetProperty("labelGapMm", out var lg) && lg.ValueKind == JsonValueKind.Number)
-                    options.LabelGapMm = lg.GetDouble();
                 if (root.TryGetProperty("copies", out var c) && c.ValueKind == JsonValueKind.Number)
                     options.Copies = Math.Max(1, Math.Min(99, c.GetInt32()));
                 if (root.TryGetProperty("landscape", out var ls))
@@ -563,6 +555,30 @@ namespace InventorySystem
                         !(col.ValueKind == JsonValueKind.String && col.GetString() == "false");
                 if (root.TryGetProperty("pageRange", out var pr) && pr.ValueKind == JsonValueKind.String)
                     options.PageRange = pr.GetString() ?? "all";
+                if (root.TryGetProperty("labelWidthMm", out var lw) && lw.ValueKind == JsonValueKind.Number)
+                    options.LabelWidthMm = lw.GetDouble();
+                if (root.TryGetProperty("labelHeightMm", out var lh) && lh.ValueKind == JsonValueKind.Number)
+                    options.LabelHeightMm = lh.GetDouble();
+                if (root.TryGetProperty("labelGapMm", out var lg) && lg.ValueKind == JsonValueKind.Number)
+                    options.LabelGapMm = lg.GetDouble();
+                if (root.TryGetProperty("marginMm", out var lm) && lm.ValueKind == JsonValueKind.Number)
+                    options.MarginMm = lm.GetDouble();
+                if (root.TryGetProperty("marginTopMm", out var mt) && mt.ValueKind == JsonValueKind.Number)
+                    options.MarginTopMm = mt.GetDouble();
+                if (root.TryGetProperty("marginRightMm", out var mr) && mr.ValueKind == JsonValueKind.Number)
+                    options.MarginRightMm = mr.GetDouble();
+                if (root.TryGetProperty("marginBottomMm", out var mb) && mb.ValueKind == JsonValueKind.Number)
+                    options.MarginBottomMm = mb.GetDouble();
+                if (root.TryGetProperty("marginLeftMm", out var ml) && ml.ValueKind == JsonValueKind.Number)
+                    options.MarginLeftMm = ml.GetDouble();
+                if (root.TryGetProperty("columns", out var cols) && cols.ValueKind == JsonValueKind.Number)
+                    options.Columns = cols.GetInt32();
+                if (root.TryGetProperty("paperMode", out var pm) && pm.ValueKind == JsonValueKind.String)
+                    options.PaperMode = pm.GetString();
+                if (root.TryGetProperty("pageWidthMm", out var pw) && pw.ValueKind == JsonValueKind.Number)
+                    options.PageWidthMm = pw.GetDouble();
+                if (root.TryGetProperty("pageHeightMm", out var ph) && ph.ValueKind == JsonValueKind.Number)
+                    options.PageHeightMm = ph.GetDouble();
 
                 ThermalLabelHelper.PrintLabels(items, options, this);
                 PostPrintResult(true, null);
@@ -571,7 +587,7 @@ namespace InventorySystem
             {
                 PostPrintResult(false, ex.Message);
                 MessageBox.Show(this, "Could not print labels:\n" + ex.Message,
-                    "a2z Tech", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    ThemeConfig.AppTitle, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
@@ -591,14 +607,26 @@ namespace InventorySystem
                     options.CurrencySymbol = cs.GetString() ?? "$";
                 if (root.TryGetProperty("printerName", out var pn) && pn.ValueKind == JsonValueKind.String)
                     options.PrinterName = pn.GetString();
-                if (root.TryGetProperty("protocol", out var proto) && proto.ValueKind == JsonValueKind.String)
-                    options.Protocol = proto.GetString();
                 if (root.TryGetProperty("copies", out var c) && c.ValueKind == JsonValueKind.Number)
                     options.Copies = Math.Max(1, Math.Min(99, c.GetInt32()));
                 if (root.TryGetProperty("landscape", out var ls))
                     options.Landscape = ls.ValueKind == JsonValueKind.True;
                 if (root.TryGetProperty("color", out var col))
                     options.Color = col.ValueKind != JsonValueKind.False;
+                if (root.TryGetProperty("paperWidthMm", out var pw) && pw.ValueKind == JsonValueKind.Number)
+                    options.PaperWidthMm = pw.GetDouble();
+                if (root.TryGetProperty("paperHeightMm", out var ph) && ph.ValueKind == JsonValueKind.Number)
+                    options.PaperHeightMm = ph.GetDouble();
+                if (root.TryGetProperty("marginMm", out var mm) && mm.ValueKind == JsonValueKind.Number)
+                    options.MarginMm = mm.GetDouble();
+                if (root.TryGetProperty("marginTopMm", out var rmt) && rmt.ValueKind == JsonValueKind.Number)
+                    options.MarginTopMm = rmt.GetDouble();
+                if (root.TryGetProperty("marginRightMm", out var rmr) && rmr.ValueKind == JsonValueKind.Number)
+                    options.MarginRightMm = rmr.GetDouble();
+                if (root.TryGetProperty("marginBottomMm", out var rmb) && rmb.ValueKind == JsonValueKind.Number)
+                    options.MarginBottomMm = rmb.GetDouble();
+                if (root.TryGetProperty("marginLeftMm", out var rml) && rml.ValueKind == JsonValueKind.Number)
+                    options.MarginLeftMm = rml.GetDouble();
 
                 decimal ReadDec(string name)
                 {
@@ -656,7 +684,7 @@ namespace InventorySystem
             {
                 PostPrintResult(false, ex.Message);
                 MessageBox.Show(this, "Could not print receipt:\n" + ex.Message,
-                    "a2z Tech", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    ThemeConfig.AppTitle, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
@@ -687,7 +715,7 @@ namespace InventorySystem
         {
             Opacity = 1;
             _splash.Visible = false;
-            MessageBox.Show(this, message, "a2z Tech", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, message, ThemeConfig.AppTitle, MessageBoxButtons.OK, MessageBoxIcon.Error);
             Close();
         }
 
@@ -695,12 +723,30 @@ namespace InventorySystem
         {
             using var http = new HttpClient { Timeout = TimeSpan.FromMilliseconds(800) };
             var deadline = DateTime.UtcNow + timeout;
+            string brandUrl = AppHostConfig.LoopbackUrl.TrimEnd('/') + "/api/brand";
             while (DateTime.UtcNow < deadline)
             {
                 try
                 {
-                    using var res = await http.GetAsync(PortalUrl);
-                    if ((int)res.StatusCode < 500) return true;
+                    using var res = await http.GetAsync(brandUrl);
+                    if (!res.IsSuccessStatusCode)
+                    {
+                        await Task.Delay(40);
+                        continue;
+                    }
+
+                    string json = await res.Content.ReadAsStringAsync();
+                    using var doc = JsonDocument.Parse(json);
+                    JsonElement id;
+                    if (!doc.RootElement.TryGetProperty("brandId", out id)
+                        && !doc.RootElement.TryGetProperty("BrandId", out id))
+                    {
+                        await Task.Delay(40);
+                        continue;
+                    }
+
+                    if (string.Equals(id.GetString(), AppHostConfig.BrandId, StringComparison.OrdinalIgnoreCase))
+                        return true;
                 }
                 catch { }
                 await Task.Delay(40);
