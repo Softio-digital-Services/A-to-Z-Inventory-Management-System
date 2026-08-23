@@ -48,3 +48,5 @@ Data/*.db
 **/Data/inventory.db
 dist/app/Data/*.db
 
+
+dist/

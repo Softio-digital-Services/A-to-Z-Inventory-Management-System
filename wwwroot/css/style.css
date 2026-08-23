@@ -3379,7 +3379,6 @@ body.rtl .settings-kv { text-align: start; }
 }
 .supp-purchase-add .sp-add-wrap .btn {
     height: 2.5rem;
-    min-width: 5rem;
     padding-inline: 1.1rem;
 }
 .supp-purchase-add .sp-add-spacer {
@@ -3953,7 +3952,7 @@ body.rtl #inventory .page-search-row .search-box {
     font-size: 0.88rem;
 }
 .quote-items-table td:nth-child(2) {
-    text-align: left;
+    text-align: center;
     font-weight: 500;
     color: var(--text-main);
 }
@@ -4033,7 +4032,6 @@ body.rtl #inventory .page-search-row .search-box {
 .btn-quote-cancel,
 .btn-quote-export {
     background: #fff;
-    min-width: 96px;
     box-shadow: none;
 }
 .btn-quote-cancel {
@@ -4059,7 +4057,6 @@ body.rtl #inventory .page-search-row .search-box {
     background: var(--primary-color);
     color: #fff;
     border: none;
-    min-width: 96px;
     box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.3);
 }
 .btn-quote-print:hover {
@@ -4068,7 +4065,7 @@ body.rtl #inventory .page-search-row .search-box {
 }
 body.rtl .quote-doc-title { text-align: left; }
 body.rtl .quote-totals { text-align: left; }
-body.rtl .quote-items-table td:nth-child(2) { text-align: right; }
+body.rtl .quote-items-table td:nth-child(2) { text-align: center; }
 @media (max-width: 720px) {
     .quote-sheet-header { flex-direction: column; }
     .quote-doc-title { text-align: left; }
