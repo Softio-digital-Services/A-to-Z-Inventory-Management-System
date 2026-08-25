@@ -613,7 +613,7 @@ const T = {
     }
 };
 
-let lang = localStorage.getItem('a2z_lang') || localStorage.getItem('generic_lang') || localStorage.getItem('panache_lang') || localStorage.getItem('otargi_lang') || 'en';
+let lang = localStorage.getItem('a2z_lang')    || 'en';
 let currentUser = null;
 let featureFlags = { scaleEnabled: false, quickSaleEnabled: false };
 let printSettings = {
@@ -7592,7 +7592,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
 
-        const saved = sessionStorage.getItem('a2z_user') || sessionStorage.getItem('generic_user') || sessionStorage.getItem('panache_user') || sessionStorage.getItem('otargi_user');
+        const saved = sessionStorage.getItem('a2z_user')   ;
         if (saved) {
             try {
                 currentUser = JSON.parse(saved);
@@ -7601,8 +7601,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 await loadFeatureFlags();
                 await loadData();
             } catch {
-                sessionStorage.removeItem('generic_user');
-                sessionStorage.removeItem('panache_user');
+
+
                 sessionStorage.removeItem('a2z_user');
             }
         }
