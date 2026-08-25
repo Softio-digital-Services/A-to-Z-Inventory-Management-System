@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using Microsoft.Data.Sqlite;
 using InventorySystem.Helpers;
@@ -9,6 +9,7 @@ namespace InventorySystem.Services
 {
     public class Notification
     {
+        public string Key { get; set; }
         public string Title { get; set; }
         public string Message { get; set; }
         public string Type { get; set; } // "LowStock", "Order", "Info"
@@ -286,16 +287,38 @@ namespace InventorySystem.Services
                     "ORDER BY quantity_in_stock ASC, part_name ASC");
                 foreach (DataRow row in stockAlerts.Rows)
                 {
+                    string partName = Convert.ToString(row["part_name"]);
                     int qty = Convert.ToInt32(row["quantity_in_stock"]);
                     bool outOfStock = qty <= 0;
+                    string type = outOfStock ? "OutOfStock" : "LowStock";
                     notifications.Add(new Notification
                     {
-                        Type      = outOfStock ? "OutOfStock" : "LowStock",
+                        Key       = $"{type}:{partName}",
+                        Type      = type,
                         Title     = L(outOfStock ? "Notif_OutOfStock" : "Notif_LowStock"),
                         Message   = outOfStock
-                            ? string.Format(L("Notif_OutOfStockMsg"), row["part_name"])
-                            : string.Format(L("Notif_LowStockMsg"), row["part_name"], qty),
+                            ? string.Format(L("Notif_OutOfStockMsg"), partName)
+                            : string.Format(L("Notif_LowStockMsg"), partName, qty),
                         Target    = "btnInventory",
+                        Timestamp = DateTime.Now
+                    });
+                }
+            });
+
+            // License expiration warning (3 days or fewer)
+            TryAdd("LicenseAlert", () =>
+            {
+                var lic = LicenseManager.GetCurrentLicense();
+                if (lic != null && lic.IsValid() && lic.DaysRemaining() <= 3 && lic.DaysRemaining() > 0)
+                {
+                    int days = lic.DaysRemaining();
+                    notifications.Add(new Notification
+                    {
+                        Key       = $"LicenseExpiring:{days}",
+                        Type      = "LicenseExpiring",
+                        Title     = L("Notif_LicenseExpiringTitle"),
+                        Message   = string.Format(L("Notif_LicenseExpiringMsg"), days),
+                        Target    = "settings",
                         Timestamp = DateTime.Now
                     });
                 }

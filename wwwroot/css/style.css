@@ -5450,3 +5450,148 @@ body.web-client:has(#pos.active) .main-content {
   .scale-readout { grid-template-columns: 1fr; }
 }
 
+
+/* Settings Layout */
+.settings-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.settings-grid-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  align-items: stretch;
+}
+.settings-grid-row:has(> [hidden]:first-child:last-child),
+.settings-grid-row:empty {
+  display: none;
+}
+@media (max-width: 768px) {
+  .settings-grid-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Global Empty State Styling */
+.empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  text-align: center;
+  width: 100%;
+}
+.empty-state .material-symbols-rounded {
+  font-size: 3.5rem;
+  opacity: 0.45;
+  margin-bottom: 0.5rem;
+}
+
+/* POS Customer Box: remove grey background shape when debt is hidden or empty */
+.pos-customer-debt[hidden],
+.pos-customer-debt:empty {
+  display: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+/* Arabic (RTL): position header window controls on the left side and invert button order (X [] _) so Close is at far left edge */
+body.rtl #titlebar,
+body.rtl .titlebar {
+  flex-direction: row-reverse !important;
+}
+body.rtl .window-controls {
+  flex-direction: row-reverse !important;
+}
+body.rtl #titlebar-tools {
+  margin-inline-start: 8px;
+  margin-inline-end: 8px;
+}
+
+/* Settings Page Alignment (Header text at start, action buttons at end) */
+.settings-page-header {
+  width: 100%;
+  text-align: start;
+}
+.settings-page-header > div {
+  text-align: start;
+}
+.settings-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+.settings-save-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Mandatory License Wall Blocking rules */
+#license-modal.license-wall-blocking {
+  z-index: 999999 !important;
+  pointer-events: auto !important;
+}
+
+#license-modal.license-wall-blocking .close-btn {
+  display: none !important;
+}
+
+
+
+
+/* Sidebar System Color Override */
+.sidebar {
+    background: var(--primary-color) !important;
+    border-right: none !important;
+}
+.sidebar .brand-mark {
+    color: #ffffff !important;
+}
+.sidebar .nav-item {
+    color: rgba(255, 255, 255, 0.75) !important;
+}
+.sidebar .nav-item:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #ffffff !important;
+}
+.sidebar .nav-item.active {
+    background: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+}
+.sidebar .nav-item:not(.active) .nav-badge {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+}
+.sidebar .user-chip {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border: none !important;
+}
+.sidebar .user-details h4 {
+    color: #ffffff !important;
+}
+.sidebar .user-details p {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+.sidebar .logout-btn {
+    color: rgba(255, 255, 255, 0.75) !important;
+}
+.sidebar .logout-btn:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+}
+.sidebar .logo-icon {
+    background: #ffffff !important;
+    color: var(--primary-color) !important;
+}

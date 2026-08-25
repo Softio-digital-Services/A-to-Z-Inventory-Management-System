@@ -239,10 +239,10 @@ const T = {
         weigh_btn: 'Weigh',
         per_kg: '/kg',
         scale_pick_product: 'Press on a weight product below',
-        scale_weight_lbl: 'Weight (kg)', scale_price_lbl: 'Price',
+        scale_weight_lbl: 'Weight (g)', scale_price_lbl: 'Price',
         scale_read: 'Read scale', scale_add_cart: 'Add to cart',
         scale_selected: 'Selected',
-        scale_manual_hint: 'Type kg here if the scale is offline',
+        scale_manual_hint: 'Type weight in grams (g) if scale is offline',
         scale_offline_manual: 'Scale offline — type weight in kg',
         scale_offline: 'Scale offline',
         scale_online: 'Scale online',
@@ -543,10 +543,10 @@ const T = {
         weigh_btn: 'وزن',
         per_kg: '/كغ',
         scale_pick_product: 'اضغط على منتج بالوزن من الأسفل',
-        scale_weight_lbl: 'الوزن (كغ)', scale_price_lbl: 'السعر',
+        scale_weight_lbl: 'الوزن (غ)', scale_price_lbl: 'السعر',
         scale_read: 'قراءة الميزان', scale_add_cart: 'إضافة للسلة',
         scale_selected: 'المحدد',
-        scale_manual_hint: 'اكتب الكغ هنا إذا كان الميزان غير متصل',
+        scale_manual_hint: 'أدخل الوزن بالغرام (غ) إذا كان الميزان غير متصل',
         scale_offline_manual: 'الميزان غير متصل — أدخل الوزن بالكغ',
         scale_offline: 'الميزان غير متصل',
         scale_online: 'الميزان متصل',
@@ -7126,13 +7126,13 @@ const scaleManager = {
 
     setManualWeight(kg) {
         const el = document.getElementById('scaleManualWeight');
-        if (el) el.value = Number(kg || 0).toFixed(3);
+        if (el) el.value = Math.round(Number(kg || 0) * 1000);
     },
 
     getManualWeight() {
         const el = document.getElementById('scaleManualWeight');
-        const v = Number(el?.value);
-        return Number.isFinite(v) ? Math.max(0, v) : 0;
+        const g = Number(el?.value);
+        return Number.isFinite(g) ? Math.max(0, g / 1000) : 0;
     },
 
     onManualWeightInput() {
@@ -7189,7 +7189,13 @@ const scaleManager = {
     updateManualHint() {
         const hint = document.getElementById('scaleManualHint');
         if (!hint) return;
-        hint.textContent = scaleState.connected ? tr('scale_manual_hint') : tr('scale_offline_manual');
+        const g = Number(document.getElementById('scaleManualWeight')?.value || 0);
+        if (g > 0) {
+            const kg = (g / 1000).toFixed(3);
+            hint.textContent = `${g} g = ${kg} ${tr('unit_kg')}`;
+        } else {
+            hint.textContent = scaleState.connected ? tr('scale_manual_hint') : tr('scale_offline_manual');
+        }
     },
 
     async refreshPorts() {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace InventorySystem.Helpers
 {
@@ -53,8 +53,10 @@ namespace InventorySystem.Helpers
         /// </summary>
         public int DaysRemaining()
         {
+            if (DateTime.Now >= ExpirationDate)
+                return 0;
             TimeSpan remaining = ExpirationDate - DateTime.Now;
-            return Math.Max(0, (int)remaining.TotalDays);
+            return Math.Max(0, (int)Math.Ceiling(remaining.TotalDays));
         }
 
         /// <summary>

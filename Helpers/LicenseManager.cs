@@ -9,7 +9,7 @@ namespace InventorySystem.Helpers
     /// </summary>
     public static class LicenseManager
     {
-        private const string ProductCode = "PSIMS"; // Generic Inventory Management System
+        private const string ProductCode = "OSIMS"; // Generic Inventory Management System
         private const int TrialDays = 30;
 
         /// <summary>
@@ -109,7 +109,12 @@ namespace InventorySystem.Helpers
         /// </summary>
         public static LicenseKey GetCurrentLicense()
         {
-            return LicenseStorage.LoadLicense();
+            LicenseKey license = LicenseStorage.LoadLicense();
+            if (license == null)
+            {
+                license = StartTrial();
+            }
+            return license;
         }
 
         /// <summary>

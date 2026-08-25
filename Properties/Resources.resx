@@ -1061,6 +1061,12 @@
     <value>Logout?</value>
   </data>
   <data name="Main_NoNotifications" xml:space="preserve">    <value>No new notifications</value>  </data>
+  <data name="Notif_LicenseExpiringTitle" xml:space="preserve">
+    <value>License Expiring Soon</value>
+  </data>
+  <data name="Notif_LicenseExpiringMsg" xml:space="preserve">
+    <value>Warning: Your license will expire in {0} day(s). Please renew your license key.</value>
+  </data>
   <data name="POS_PayLater" xml:space="preserve">
     <value>Pay Later</value>
   </data>
@@ -2364,7 +2370,7 @@ Accepted By: __________________________</value>
     <value>Softio</value>
   </data>
   <data name="AboutUs_AppName" xml:space="preserve">
-    <value>Generic Inventory</value>
+    <value>Otargi Inventory</value>
   </data>
   <data name="AboutUs_Version" xml:space="preserve">
     <value>Version 1.0.2 Platinum</value>
@@ -2385,10 +2391,10 @@ Accepted By: __________________________</value>
     <value>Walk-in Customer</value>
   </data>
   <data name="QuotePreview_CompanyInfo" xml:space="preserve">
-    <value>Lebanon | West Beqaa | Kamed El Laouz    +961 71 030 683</value>
+    <value>Jnah- Rihab Road | Beirut - Lebanon | Phone: +961 76 117731</value>
   </data>
   <data name="QuotePreview_ContactFooter" xml:space="preserve">
-    <value>Phone: +961 71 030 683  |  a2z Tech</value>
+    <value>Phone: +961 76 117731  |  Email: contact@otarji.com  |  Website: www.otarji.com</value>
   </data>
   <data name="QuotePreview_MetaLine" xml:space="preserve">
     <value>QUOTE #: {0}   |   DATE: {1}   |   CUST ID: {2}   |   VALIDITY: {3}</value>
