@@ -1,4 +1,4 @@
-/* a2z Tech Web UI - SQLite backend via /api/ */
+/* A-to-Z Web UI - SQLite backend via /api/ */
 const API = '';
 const T = {
     en: {
@@ -132,14 +132,20 @@ const T = {
         backup_location: 'Backup location', backup_choose_folder: 'Choose Folder', backup_use_default: 'Use Default',
         no_notifications: 'No notifications', clear_all_notifications: 'Clear all',
         clear_notification: 'Clear', confirm_clear_notifications: 'Clear all notifications?',
+        app_refreshed: 'App refreshed',
         locked_title: 'Screen Locked',
         locked_subtitle: 'Enter your password to continue', unlock_btn: 'Unlock',
-        unlock_fail: 'Incorrect password', about_blurb: 'Desktop inventory management for a2z Tech.',
+        unlock_fail: 'Incorrect password', about_blurb: 'Desktop inventory management for A-to-Z.',
         last_backup: 'Last backup', backup_none: 'No backup yet',
         activate_license: 'Activate License', activate_btn: 'Activate', start_trial: 'Start Trial',
         license_key: 'License Key', machine_id: 'Machine ID', copy: 'Copy',
         license_subtitle: 'Enter your license key to activate this machine.',
         license_ok: 'License activated successfully', license_invalid: 'Invalid license key',
+        trial_expired_msg: 'Your trial period has ended. Please enter a valid license key to activate the app.',
+        license_expired_msg: 'Your annual license has expired. Please enter a valid license key to reactivate the app.',
+        license_expiring_soon_title: 'License Expiring Soon',
+        license_expiring_soon_msg: 'Warning: Your license will expire in {0} day(s). Please renew your license key.',
+        close_app: 'Exit Application',
         feature_scale_title: 'Hardware Scale',
         feature_scale_hint: 'Only Softio Super Admin can enable sell-by-weight products and the POS scale panel.',
         feature_scale_enable: 'Enable scale / sell-by-weight',
@@ -156,7 +162,7 @@ const T = {
         feature_quicksale_denied: 'Only Softio Super Admin can change this',
         trial_ok: 'Trial started', trial_used: 'Trial already used', copied: 'Copied',
         cannot_delete_super_admin: 'Super Admin cannot be deleted',
-        about_us: 'About Us', about_company: 'Softio', about_app_name: 'a2z Tech',
+        about_us: 'About Us', about_company: 'Softio', about_app_name: 'A-to-Z Inventory',
         about_version: 'Version 1.0.2 Platinum',
         about_desc: 'A comprehensive Inventory and Sales Management System designed to meet the needs of SMBs. Features modern UI, real-time sync, and multi-language support.',
         about_dev: 'Developed by Softio Digital Transformation',
@@ -223,27 +229,27 @@ const T = {
         sell_by_hint_piece: 'Pick the unit below (pcs / box / pack). Price is for one unit; stock is how many you have.',
         weight_guide_title: 'Weight product setup',
         weight_guide_1: 'Set Price / kg for this chocolate type (example: 40 = $40 for 1 kg).',
-        weight_guide_2: 'Set Stock (g) in grams (example: 5000 = 5 kg on the shelf).',
+        weight_guide_2: 'Set Stock (g) in grams (example: 5000 = 5 kg on the shelf, 1000 g = 1 kg).',
         weight_guide_3: 'At POS: Weigh → enter kg or Read scale → Add to cart.',
         price_per_kg: 'Price / kg', price_per_kg_hint: 'Enter the price of 1 kg. POS multiplies by the weighed amount.',
         stock_grams: 'Stock (g)', low_level_grams: 'Low level (g)',
-        stock_grams_hint: 'Enter grams. Example: 1250 = 1.250 kg',
+        stock_grams_hint: 'Enter stock in grams (g). Details: 1000 g = 1 kg | 5000 g = 5 kg | 1250 g = 1.250 kg.',
         stock_units_hint: 'How many units on the shelf (pieces, boxes, or packs).',
         uom_piece_hint: 'pcs / box / pack — price is for one unit',
-        uom_weight_hint: 'Locked to kg. Price is per kg; stock below is in grams.',
+        uom_weight_hint: 'Locked to g (grams). Price is per kg; stock is entered in grams (g) (1000 g = 1 kg).',
         weigh_first: 'Product selected — enter kg or Read scale, then Add to cart',
         weigh_need_product: 'Press Weigh on a product first',
         weigh_need_scale: 'Enter a weight greater than 0',
         weigh_need_read: 'Enter weight (or Read scale) first',
         weigh_added: 'Added {0} @ {1} kg',
-        weigh_btn: 'Weigh',
+        weigh_btn: 'Weigh', weight_badge: 'By Weight',
         per_kg: '/kg',
         scale_pick_product: 'Press on a weight product below',
         scale_weight_lbl: 'Weight (g)', scale_price_lbl: 'Price',
         scale_read: 'Read scale', scale_add_cart: 'Add to cart',
         scale_selected: 'Selected',
-        scale_manual_hint: 'Type weight in grams (g) if scale is offline',
-        scale_offline_manual: 'Scale offline — type weight in kg',
+        scale_manual_hint: 'Enter grams (g). Example: 1000 = 1.000 kg | 1250 = 1.250 kg',
+        scale_offline_manual: 'Enter grams (g). Example: 1000 = 1.000 kg | 1250 = 1.250 kg',
         scale_offline: 'Scale offline',
         scale_online: 'Scale online',
         scale_unstable: 'Scale unstable',
@@ -305,7 +311,7 @@ const T = {
         pos_menu: 'Menu', all_categories: 'All Categories', items_count: 'items',
         no_products: 'No products found.',
         scan_to_connect: 'Scan to Connect',
-        scan_to_connect_hint: 'Same Wi‑Fi — open the full a2z Tech app on phone or tablet.',
+        scan_to_connect_hint: 'Same Wi‑Fi — open the full A-to-Z app on phone or tablet.',
         copy_url: 'Copy URL'
     },
     ar: {
@@ -438,14 +444,20 @@ const T = {
         backup_location: 'موقع النسخ', backup_choose_folder: 'اختيار مجلد', backup_use_default: 'المجلد الافتراضي',
         no_notifications: 'لا توجد إشعارات', clear_all_notifications: 'مسح الكل',
         clear_notification: 'مسح', confirm_clear_notifications: 'مسح كل الإشعارات؟',
+        app_refreshed: 'تم تحديث التطبيق',
         locked_title: 'الشاشة مقفلة',
         locked_subtitle: 'أدخل كلمة المرور للمتابعة', unlock_btn: 'فتح القفل',
-        unlock_fail: 'كلمة المرور غير صحيحة', about_blurb: 'نظام إدارة المخزون لـ a2z Tech.',
+        unlock_fail: 'كلمة المرور غير صحيحة', about_blurb: 'نظام إدارة المخزون A-to-Z.',
         last_backup: 'آخر نسخة', backup_none: 'لا توجد نسخة بعد',
         activate_license: 'تفعيل الترخيص', activate_btn: 'تفعيل', start_trial: 'بدء التجربة',
         license_key: 'مفتاح الترخيص', machine_id: 'معرّف الجهاز', copy: 'نسخ',
         license_subtitle: 'أدخل مفتاح الترخيص لتفعيل هذا الجهاز.',
         license_ok: 'تم تفعيل الترخيص بنجاح', license_invalid: 'مفتاح الترخيص غير صالح',
+        trial_expired_msg: 'انتهت الفترة التجريبية. يرجى إدخال مفتاح ترخيص صالح لتفعيل التطبيق.',
+        license_expired_msg: 'انتهت صلاحية الترخيص السنوي. يرجى إدخال مفتاح ترخيص صالح لإعادة تفعيل التطبيق.',
+        license_expiring_soon_title: 'الترخيص سينتهي قريباً',
+        license_expiring_soon_msg: 'تحذير: سينتهي ترخيصك خلال {0} أيام. يرجى تجديد مفتاح الترخيص.',
+        close_app: 'إغلاق التطبيق',
         feature_scale_title: 'ميزان الأجهزة',
         feature_scale_hint: 'يمكن لمشرف Softio فقط تفعيل البيع بالوزن ولوحة الميزان في نقطة البيع.',
         feature_scale_enable: 'تفعيل الميزان / البيع بالوزن',
@@ -462,7 +474,7 @@ const T = {
         feature_quicksale_denied: 'يمكن لمشرف Softio فقط تغيير هذا الإعداد',
         trial_ok: 'تم بدء الفترة التجريبية', trial_used: 'تم استخدام التجربة مسبقاً', copied: 'تم النسخ',
         cannot_delete_super_admin: 'لا يمكن حذف المسؤول الأعلى',
-        about_us: 'من نحن', about_company: 'Softio', about_app_name: 'a2z Tech', about_version: 'الإصدار 1.0.2 Platinum',
+        about_us: 'من نحن', about_company: 'Softio', about_app_name: 'نظام مخزون A-to-Z', about_version: 'الإصدار 1.0.2 Platinum',
         about_desc: 'نظام متكامل لإدارة المخازن والمبيعات، مصمم خصيصاً لتلبية احتياجات الشركات الصغيرة والمتوسطة. يتميز بواجهة عصرية ودعم كامل للغة العربية.',
         about_dev: 'تطوير بواسطة Softio Digital Transformation', about_contact: 'تواصل معنا',
         about_copyright: '© 2026 Softio Services. جميع الحقوق محفوظة.',
@@ -527,27 +539,27 @@ const T = {
         sell_by_hint_piece: 'اختر الوحدة أدناه (قطعة / علبة / عبوة). السعر لوحدة واحدة؛ المخزون = الكمية المتوفرة.',
         weight_guide_title: 'إعداد منتج بالوزن',
         weight_guide_1: 'ضع السعر / كغ لهذا النوع (مثال: 40 = 40$ لكل 1 كغ).',
-        weight_guide_2: 'ضع المخزون (غ) بالغرام (مثال: 5000 = 5 كغ على الرف).',
+        weight_guide_2: 'ضع المخزون (غ) بالغرام (مثال: 5000 = 5 كغ على الرف، 1000 غ = 1 كغ).',
         weight_guide_3: 'في نقطة البيع: وزن → أدخل الكغ أو اقرأ الميزان → أضف للسلة.',
         price_per_kg: 'السعر / كغ', price_per_kg_hint: 'أدخل سعر 1 كغ. نقطة البيع تضربه بالوزن.',
         stock_grams: 'المخزون (غ)', low_level_grams: 'الحد الأدنى (غ)',
-        stock_grams_hint: 'أدخل الغرام. مثال: 1250 = 1.250 كغ',
+        stock_grams_hint: 'أدخل المخزون بالغرام (غ). التفاصيل: 1000 غ = 1 كغ | 5000 غ = 5 كغ | 1250 غ = 1.250 كغ.',
         stock_units_hint: 'عدد الوحدات على الرف (قطع أو علب أو عبوات).',
         uom_piece_hint: 'قطعة / علبة / عبوة — السعر لوحدة واحدة',
-        uom_weight_hint: 'مثبت على كغ. السعر لكل كغ؛ المخزون أدناه بالغرام.',
+        uom_weight_hint: 'مثبت على غرام (غ). السعر لكل كغ؛ المخزون أدناه بالغرام (غ) (1000 غ = 1 كغ).',
         weigh_first: 'تم اختيار المنتج — أدخل الكغ أو اقرأ الميزان ثم أضف للسلة',
         weigh_need_product: 'اضغط وزن على منتج أولاً',
         weigh_need_scale: 'أدخل وزناً أكبر من 0',
         weigh_need_read: 'أدخل الوزن (أو اقرأ الميزان) أولاً',
         weigh_added: 'أُضيف {0} @ {1} كغ',
-        weigh_btn: 'وزن',
+        weigh_btn: 'وزن', weight_badge: 'بالوزن',
         per_kg: '/كغ',
         scale_pick_product: 'اضغط على منتج بالوزن من الأسفل',
         scale_weight_lbl: 'الوزن (غ)', scale_price_lbl: 'السعر',
         scale_read: 'قراءة الميزان', scale_add_cart: 'إضافة للسلة',
         scale_selected: 'المحدد',
-        scale_manual_hint: 'أدخل الوزن بالغرام (غ) إذا كان الميزان غير متصل',
-        scale_offline_manual: 'الميزان غير متصل — أدخل الوزن بالكغ',
+        scale_manual_hint: 'أدخل الغرام (غ). مثال: 1000 = 1.000 كغ | 1250 = 1.250 كغ',
+        scale_offline_manual: 'أدخل الغرام (غ). مثال: 1000 = 1.000 كغ | 1250 = 1.250 كغ',
         scale_offline: 'الميزان غير متصل',
         scale_online: 'الميزان متصل',
         scale_unstable: 'الميزان غير مستقر',
@@ -608,12 +620,12 @@ const T = {
         pos_menu: 'القائمة', all_categories: 'كل الفئات', items_count: 'أصناف',
         no_products: 'لا توجد منتجات.',
         scan_to_connect: 'امسح للاتصال',
-        scan_to_connect_hint: 'نفس الواي فاي — افتح تطبيق a2z Tech بالكامل على الهاتف أو الجهاز اللوحي.',
+        scan_to_connect_hint: 'نفس الواي فاي — افتح تطبيق A-to-Z بالكامل على الهاتف أو الجهاز اللوحي.',
         copy_url: 'نسخ الرابط'
     }
 };
 
-let lang = localStorage.getItem('a2z_lang')    || 'en';
+let lang = localStorage.getItem('a2z_lang')   || 'en';
 let currentUser = null;
 let featureFlags = { scaleEnabled: false, quickSaleEnabled: false };
 let printSettings = {
@@ -685,12 +697,13 @@ function productPriceTiers(p) {
 }
 
 function isSellByWeight(p) {
-    if (!featureFlags.scaleEnabled || !p) return false;
+    if (!p) return false;
     const flag = p.sellByWeight ?? p.sell_by_weight;
     if (flag === true || flag === 1 || flag === '1') return true;
     const uom = String(p.uom || '').toLowerCase();
     const cat = String(p.category || '').toLowerCase();
-    if (uom === 'kg' && cat.includes('bulk')) return true;
+    if (['kg', 'g', 'gram', 'grams', 'kilo', 'kilos', 'kilogram', 'kilograms', 'lb', 'lbs', 'oz'].includes(uom)) return true;
+    if (cat.includes('bulk') || cat.includes('weight') || cat.includes('وزن') || cat.includes('فرل') || cat.includes('فله')) return true;
     return false;
 }
 
@@ -708,10 +721,10 @@ function applyFeatureFlags(flags) {
     document.body.classList.toggle('feature-quicksale', featureFlags.quickSaleEnabled);
 
     const scalePanel = document.getElementById('scalePanel');
-    if (scalePanel) scalePanel.hidden = !featureFlags.scaleEnabled;
+    if (scalePanel) scalePanel.hidden = false;
 
     const sellFs = document.getElementById('p-sell-by-fieldset');
-    if (sellFs) sellFs.hidden = !featureFlags.scaleEnabled;
+    if (sellFs) sellFs.hidden = false;
 
     const qsBtn = document.getElementById('btn-quick-sale');
     if (qsBtn) qsBtn.hidden = !featureFlags.quickSaleEnabled;
@@ -1367,6 +1380,24 @@ function applyI18n() {
     try { scaleManager?.render?.(); } catch { /* scale not ready yet */ }
 }
 
+function openModal(id) {
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    modal.classList.add('active');
+}
+
+function closeModal(id) {
+    if (id === 'license-modal' && document.getElementById('license-modal')?.classList.contains('license-wall-blocking')) {
+        const lic = window._license;
+        if (lic && (lic.isValid === false || (lic.daysRemaining !== undefined && lic.daysRemaining <= 0))) {
+            return;
+        }
+    }
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    modal.classList.remove('active');
+}
+
 function toast(msg, type = '') {
     const el = document.getElementById('toast');
     el.textContent = msg; el.className = 'toast show ' + type;
@@ -1563,67 +1594,53 @@ function insertOptimisticProduct(payload) {
 }
 
 async function loadDataCore() {
+    const isAdmin = can('admin');
+    const isStaffOrAcc = can('admin,staff,accountant');
+
     const settled = await Promise.allSettled([
         api('/api/products?includeInactive=1'),
         api('/api/categories'),
         api('/api/recent-sales'),
-        api('/api/dashboard')
+        api('/api/dashboard'),
+        api('/api/customers'),
+        api('/api/suppliers'),
+        api('/api/currencies'),
+        isStaffOrAcc ? api('/api/expenses') : Promise.resolve([]),
+        isStaffOrAcc ? api('/api/quotations') : Promise.resolve([]),
+        isStaffOrAcc ? api('/api/expense-categories') : Promise.resolve([]),
+        isAdmin ? api('/api/users') : Promise.resolve([]),
+        api('/api/barcode/items')
     ]);
+
     const val = (i) => (settled[i].status === 'fulfilled' ? settled[i].value : null);
     const p = val(0), c = val(1), s = val(2), d = val(3);
-    settled.forEach((r, i) => {
-        if (r.status === 'rejected')
-            console.error('loadData core[' + i + ']', r.reason);
-    });
+    const cust = val(4), supp = val(5), curr = val(6);
+    const exp = val(7), quot = val(8), expCat = val(9);
+    const usr = val(10), bc = val(11);
 
-    if (p) {
-        products = (p || []).map(normalizeProductRow);
-    } else if (!products.length) {
-        try {
-            await new Promise(r => setTimeout(r, 350));
-            const retry = await api('/api/products?includeInactive=1');
-            products = (retry || []).map(normalizeProductRow);
-        } catch (e) { console.error('products retry', e); }
-    }
+    if (p) products = (p || []).map(normalizeProductRow);
     if (c) categories = c || [];
-    else if (!categories.length) {
-        try { categories = await api('/api/categories') || []; } catch { /* keep */ }
-    }
     if (s) sales = s || [];
-    else if (!sales.length) {
-        try { sales = await api('/api/recent-sales') || []; } catch { /* keep */ }
-    }
     if (d) dashboard = d || {};
-    else if (!dashboard) {
-        try { dashboard = await api('/api/dashboard') || {}; } catch { dashboard = {}; }
-    }
+    if (cust) customers = cust || [];
+    if (supp) suppliers = supp || [];
+    if (curr) currencies = curr || [];
+    if (exp) expenses = exp || [];
+    if (quot) quotations = quot || [];
+    if (expCat) expenseCategories = expCat || [];
+    if (usr) users = usr || [];
+    if (bc) barcodeItems = bc || [];
+    else barcodeItems = products.map(x => ({ id: x.id, name: x.name, sku: x.sku, price: x.price, barcode: x.barcode, stock: x.stock }));
 
     renderDashboard();
     const connectTask = loadConnectInfo();
+    const extraTasks = [];
+    if (isStaffOrAcc) {
+        extraTasks.push(loadReports(), loadHistory());
+    }
+    extraTasks.push(loadUoms(), loadLicense(), connectTask);
+    await Promise.allSettled(extraTasks);
 
-    try { customers = await api('/api/customers'); } catch { customers = customers || []; }
-    try { suppliers = await api('/api/suppliers'); } catch { suppliers = suppliers || []; }
-    try { currencies = await api('/api/currencies'); } catch { currencies = currencies || []; }
-    if (can('admin,staff,accountant')) {
-        try { expenses = await api('/api/expenses'); } catch { expenses = expenses || []; }
-        try { quotations = await api('/api/quotations'); } catch { quotations = quotations || []; }
-        try { expenseCategories = await api('/api/expense-categories'); } catch { expenseCategories = expenseCategories || []; }
-        await loadReports();
-        await loadHistory();
-    }
-    if (can('admin')) {
-        try { users = await api('/api/users'); } catch { users = users || []; }
-    }
-    try {
-        barcodeItems = await api('/api/barcode/items');
-    } catch {
-        barcodeItems = products.map(x => ({
-            id: x.id, name: x.name, sku: x.sku, price: x.price, barcode: x.barcode, stock: x.stock
-        }));
-    }
-    await loadUoms();
-    await loadLicense();
-    await connectTask;
     renderAll();
     refreshNotifications();
 }
@@ -1755,8 +1772,54 @@ async function loadHistory() {
 }
 
 async function loadLicense() {
-    try { window._license = await api('/api/license'); }
-    catch { window._license = null; }
+    try {
+        window._license = await api('/api/license');
+        checkLicenseExpirationWall();
+    } catch { window._license = null; }
+}
+
+function checkLicenseExpirationWall() {
+    const lic = window._license;
+    if (!lic) return;
+    const isExpired = lic.isValid === false || (lic.daysRemaining !== undefined && lic.daysRemaining <= 0);
+    const modal = document.getElementById('license-modal');
+    if (!modal) return;
+
+    if (isExpired) {
+        modal.classList.add('license-wall-blocking');
+        const err = document.getElementById('license-activate-error');
+        if (err) {
+            err.textContent = lic.isTrial ? tr('trial_expired_msg') : tr('license_expired_msg');
+            err.classList.add('visible');
+        }
+        openLicenseModal();
+        const closeBtn = modal.querySelector('.close-btn');
+        if (closeBtn) closeBtn.style.display = 'none';
+        const cancelBtn = document.getElementById('btn-lic-cancel') || modal.querySelector('[data-close="license-modal"]');
+        if (cancelBtn) cancelBtn.style.display = 'none';
+        const startTrialBtn = document.getElementById('btn-start-trial');
+        if (startTrialBtn) startTrialBtn.style.display = 'none';
+        const closeAppBtn = document.getElementById('btn-lic-close-app');
+        if (closeAppBtn) {
+            closeAppBtn.style.display = '';
+            closeAppBtn.onclick = () => postHost('close');
+        }
+    } else {
+        modal.classList.remove('license-wall-blocking');
+        const closeBtn = modal.querySelector('.close-btn');
+        if (closeBtn) {
+            closeBtn.style.display = '';
+            closeBtn.onclick = () => closeModal('license-modal');
+        }
+        const cancelBtn = document.getElementById('btn-lic-cancel') || modal.querySelector('[data-close="license-modal"]');
+        if (cancelBtn) cancelBtn.style.display = '';
+        const closeAppBtn = document.getElementById('btn-lic-close-app');
+        if (closeAppBtn) closeAppBtn.style.display = 'none';
+
+        if (lic.isValid && lic.daysRemaining <= 3 && lic.daysRemaining > 0) {
+            toast(tr('license_expiring_soon_msg').replace('{0}', lic.daysRemaining), 'warning');
+        }
+    }
 }
 
 function renderAll() {
@@ -2041,7 +2104,7 @@ function renderInventory() {
             <tr class="${p.isInactive ? 'inv-row-inactive' : ''}">
                 <td>${canEdit ? `<input type="checkbox" class="inv-row-check" data-inv-id="${p.id}" ${invSelected.has(p.id) ? 'checked' : ''}>` : ''}</td>
                 <td>${productThumb(p)}</td>
-                <td><strong>${escapeHtml(p.name)}</strong>${p.isInactive ? ` <span class="badge out-of-stock">${tr('inactive')}</span>` : ''}</td>
+                <td><strong>${escapeHtml(p.name)}</strong>${isSellByWeight(p) ? ` <span class="badge badge-weight">${tr('weight_badge')}</span>` : ''}${p.isInactive ? ` <span class="badge out-of-stock">${tr('inactive')}</span>` : ''}</td>
                 <td>${escapeHtml(p.sku || '—')}</td>
                 <td>${escapeHtml(p.barcode || '—')}</td>
                 <td>${escapeHtml(p.category || '—')}</td>
@@ -2049,7 +2112,7 @@ function renderInventory() {
                 <td>${p.isStockTracked === false ? '—' : (isSellByWeight(p) ? `${((Number(p.stock)||0)/1000).toFixed(3)} ${tr('unit_kg')}` : p.stock)}</td>
                 <td>${p.minStock ?? 0}</td>
                 <td>${escapeHtml(p.location || '—')}</td>
-                <td>${stockBadge(p)}</td>
+                <td>${stockBadge(p)}${isSellByWeight(p) ? ` <span class="badge badge-weight">${tr('weight_badge')}</span>` : ''}</td>
                 <td>${canEdit ? actionBtns(`data-edit-product="${p.id}"`, `data-del-product="${p.id}"`,
                     `<button type="button" class="btn-icon" title="${tr('adjust_stock')}" data-adjust-product="${p.id}"><span class="material-symbols-rounded">inventory_2</span></button>`) : '—'}</td>
             </tr>`).join('')
@@ -2078,7 +2141,7 @@ function renderInventory() {
                 <div class="inv-card-meta">${escapeHtml(p.sku || '—')} · ${escapeHtml(p.category || '—')}</div>
                 <div class="inv-card-meta">${tr('col_stock')}: ${p.isStockTracked === false ? '—' : (isSellByWeight(p) ? `${((Number(p.stock)||0)/1000).toFixed(3)} ${tr('unit_kg')}` : p.stock)}</div>
                 <div class="price">${isSellByWeight(p) ? formatPosPrice(p) : money(p.price)}</div>
-                ${stockBadge(p)}
+                ${isSellByWeight(p) ? `<span class="badge badge-weight">${tr('weight_badge')}</span> ` : ''}${stockBadge(p)}
             </div>`).join('');
         const addCard = canEdit ? `<div class="inv-card inv-card-add" id="inv-card-add"><span class="material-symbols-rounded">add</span><span data-i18n="add_new">Add New</span></div>` : '';
         cardsEl.innerHTML = (cards + addCard) || `<div class="empty-state">${tr('empty_list')}</div>`;
@@ -2363,6 +2426,11 @@ function renderCart() {
                 const sel = Math.abs(Number(pr) - Number(item.price)) < 0.0001 ? ' selected' : '';
                 return `<option value="${ti}"${sel}>P${ti + 1}</option>`;
             }).join('');
+            const isWeight = item.weighted || isSellByWeight(item);
+            const stepVal = isWeight ? '0.001' : '1';
+            const minVal = isWeight ? '0.001' : '1';
+            const formattedQty = isWeight ? Number(item.qty).toFixed(3).replace(/\.?0+$/, '') || String(item.qty) : String(item.qty);
+
             return `<div class="cart-item" data-i="${i}">
                 <div class="cart-item-top">
                     <div class="cart-item-info"><strong>${escapeHtml(item.name)}</strong>${item.skipStock || item.custom ? `<span class="cart-item-badge">${escapeHtml(tr('quick_sale_badge'))}</span>` : ''}</div>
@@ -2371,7 +2439,7 @@ function renderCart() {
                 <div class="cart-item-controls">
                     <div class="qty-controls">
                         <button type="button" data-qty="${i}" data-d="-1">−</button>
-                        <input type="number" class="cart-qty-input" data-qty-input="${i}" min="1" step="1" value="${item.qty}">
+                        <input type="number" class="cart-qty-input" data-qty-input="${i}" min="${minVal}" step="${stepVal}" value="${formattedQty}">
                         <button type="button" data-qty="${i}" data-d="1">+</button>
                     </div>
                     <div class="cart-price-wrap">
@@ -2386,7 +2454,9 @@ function renderCart() {
             btn.onclick = () => {
                 const i = Number(btn.dataset.qty), d = Number(btn.dataset.d);
                 if (!cart[i]) return;
-                cart[i].qty += d;
+                const isWeight = cart[i].weighted || isSellByWeight(cart[i]);
+                const delta = isWeight ? (d > 0 ? 0.1 : -0.1) : d;
+                cart[i].qty = Math.max(0, Number((cart[i].qty + delta).toFixed(3)));
                 if (cart[i].qty <= 0) cart.splice(i, 1);
                 else if (cart[i].qty > cart[i].max) cart[i].qty = cart[i].max;
                 renderCart();
@@ -2396,7 +2466,7 @@ function renderCart() {
             const commitQty = () => {
                 const i = Number(inp.dataset.qtyInput);
                 if (!cart[i]) return;
-                const next = parseInt(inp.value, 10);
+                const next = parseFloat(inp.value);
                 if (!Number.isFinite(next) || next <= 0) { inp.value = String(cart[i].qty); return; }
                 cart[i].qty = Math.min(cart[i].max, next);
                 renderCart();
@@ -2556,7 +2626,7 @@ function formatQuoteDate(d) {
 }
 
 function quoteBrandDisplay(name) {
-    const raw = (name || 'a2z Tech').trim();
+    const raw = (name || 'A-to-Z').trim();
     const word = raw.split(/\s+/)[0] || raw;
     return word.toUpperCase();
 }
@@ -2786,7 +2856,7 @@ function renderBarcodes() {
             <p>${escapeHtml(code)}</p>
             <div class="price">${money(b.price)}</div>
         </label>`;
-    }).join('') : `<div class="empty-state">${tr('empty_list')}</div>`;
+    }).join('') : `<div class="empty-state"><span class="material-symbols-rounded">qr_code_2</span><p>${tr('empty_list')}</p></div>`;
 
     grid.querySelectorAll('.bc-svg').forEach(svg => {
         const code = svg.dataset.code || '';
@@ -3157,8 +3227,9 @@ function toggleLanguage() {
 }
 
 async function openLicenseModal() {
+    const isWall = document.getElementById('license-modal')?.classList.contains('license-wall-blocking');
     const err = document.getElementById('license-activate-error');
-    if (err) { err.textContent = ''; err.classList.remove('visible'); }
+    if (err && !isWall) { err.textContent = ''; err.classList.remove('visible'); }
     const key = document.getElementById('lic-key');
     if (key) key.value = '';
     let hw = window._license?.hardwareId;
@@ -3171,6 +3242,30 @@ async function openLicenseModal() {
     }
     const hwid = document.getElementById('lic-hwid');
     if (hwid) hwid.textContent = hw || '—';
+
+    const lic = window._license;
+    const isExpired = !lic || lic.isValid === false || (lic.daysRemaining !== undefined && lic.daysRemaining <= 0);
+
+    const startTrialBtn = document.getElementById('btn-start-trial');
+    if (startTrialBtn) {
+        const canStart = lic && lic.canStartTrial === true && !lic.isTrial && !isExpired;
+        startTrialBtn.style.display = canStart ? '' : 'none';
+    }
+
+    const cancelBtn = document.getElementById('btn-lic-cancel') || document.querySelector('#license-modal [data-close="license-modal"]');
+    if (cancelBtn) cancelBtn.style.display = isExpired ? 'none' : '';
+
+    const closeAppBtn = document.getElementById('btn-lic-close-app');
+    if (closeAppBtn) {
+        closeAppBtn.style.display = isExpired ? '' : 'none';
+        closeAppBtn.onclick = () => postHost('close');
+    }
+
+    const closeBtn = document.querySelector('#license-modal .close-btn');
+    if (closeBtn) {
+        closeBtn.style.display = isExpired ? 'none' : '';
+    }
+
     openModal('license-modal');
 }
 
@@ -3657,7 +3752,8 @@ function calculateProductMargins() {
 }
 
 function getSellByValue() {
-    return 'piece';
+    const sel = document.querySelector('input[name="p-sell-by"]:checked');
+    return sel ? sel.value : 'piece';
 }
 
 const DEFAULT_PIECE_UOMS = ['pcs', 'box', 'pack', 'meter', 'liter', 'g'];
@@ -3704,8 +3800,8 @@ function setProductUomOptions(byWeight, preferred) {
     const prev = preferred != null ? preferred : uom.value;
     const isService = getProductTypeValue() === 'Service';
     if (byWeight) {
-        uom.innerHTML = '<option value="kg">kg</option>';
-        uom.value = 'kg';
+        uom.innerHTML = '<option value="g">g (grams)</option>';
+        uom.value = 'g';
         uom.disabled = true;
         if (addBtn) addBtn.hidden = true;
     } else {
@@ -3946,8 +4042,8 @@ function buildProductPayload() {
         isInactive: document.getElementById('p-inactive')?.checked ?? false,
         taxRate: Number(document.getElementById('p-tax')?.value) || 0,
         isStockTracked: tracked,
-        sellByWeight: featureFlags.scaleEnabled
-            && document.querySelector('input[name="p-sell-by"]:checked')?.value === 'weight',
+        sellByWeight: document.querySelector('input[name="p-sell-by"]:checked')?.value === 'weight'
+            || ['kg', 'g', 'gram', 'grams', 'kilo', 'kilos', 'kilogram', 'kilograms', 'lb', 'lbs', 'oz'].includes(String(document.getElementById('p-uom')?.value || '').toLowerCase()),
         price2: Number(document.getElementById('p-price2')?.value) || 0,
         price3: Number(document.getElementById('p-price3')?.value) || 0,
         price4: Number(document.getElementById('p-price4')?.value) || 0,
@@ -4855,22 +4951,24 @@ function updateInvActionsSlide() {
     const maxScroll = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
     const needs = maxScroll > 2;
     slide.classList.toggle('is-scrollable', needs);
+    slide.style.display = needs ? 'block' : 'none';
+    if (!needs) return;
+
     const trackW = slide.clientWidth || scroller.clientWidth;
     if (!trackW) return;
-    if (!needs) {
-        thumb.style.width = '100%';
-        thumb.style.transform = 'translateX(0)';
-        thumb.style.opacity = '0.4';
-        return;
-    }
-    thumb.style.opacity = '1';
+
+    const isRtl = document.body.classList.contains('rtl') || getComputedStyle(scroller).direction === 'rtl';
     const ratio = scroller.clientWidth / Math.max(1, scroller.scrollWidth);
     const thumbW = Math.max(28, trackW * ratio);
     const maxLeft = Math.max(0, trackW - thumbW);
-    const sl = Math.min(maxScroll, Math.max(0, Math.abs(scroller.scrollLeft)));
+
+    let sl = scroller.scrollLeft;
+    if (isRtl) sl = Math.abs(sl);
+    sl = Math.min(maxScroll, Math.max(0, sl));
+
     const left = maxScroll > 0 ? (sl / maxScroll) * maxLeft : 0;
     thumb.style.width = thumbW + 'px';
-    thumb.style.transform = `translateX(${left}px)`;
+    thumb.style.transform = `translateX(${isRtl ? -left : left}px)`;
 }
 
 function initInvActionsSlide() {
@@ -4879,27 +4977,43 @@ function initInvActionsSlide() {
     if (!scroller || !slide || slide.dataset.bound === '1') return;
     slide.dataset.bound = '1';
 
+    const isRtl = () => document.body.classList.contains('rtl') || getComputedStyle(scroller).direction === 'rtl';
+
     const scrollToRatio = (ratio) => {
         const maxScroll = scroller.scrollWidth - scroller.clientWidth;
         if (maxScroll <= 2) return;
-        scroller.scrollLeft = Math.min(1, Math.max(0, ratio)) * maxScroll;
+        const clamped = Math.min(1, Math.max(0, ratio));
+        const target = clamped * maxScroll;
+        scroller.scrollLeft = isRtl() ? -target : target;
         updateInvActionsSlide();
     };
 
     scroller.addEventListener('scroll', updateInvActionsSlide, { passive: true });
     scroller.addEventListener('wheel', e => {
-        if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
         if (scroller.scrollWidth <= scroller.clientWidth + 2) return;
         e.preventDefault();
-        scroller.scrollLeft += e.deltaY;
+        const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+        scroller.scrollLeft += (isRtl() ? -delta : delta);
         updateInvActionsSlide();
     }, { passive: false });
 
-    window.addEventListener('resize', updateInvActionsSlide);
-    if (typeof ResizeObserver !== 'undefined') {
-        new ResizeObserver(updateInvActionsSlide).observe(scroller);
-        new ResizeObserver(updateInvActionsSlide).observe(slide);
-    }
+    let isDragScroller = false, startX = 0, startSl = 0;
+    scroller.addEventListener('pointerdown', e => {
+        if (e.target.closest('button, input, select, a')) return;
+        isDragScroller = true;
+        startX = e.clientX;
+        startSl = scroller.scrollLeft;
+        scroller.setPointerCapture?.(e.pointerId);
+    });
+    scroller.addEventListener('pointermove', e => {
+        if (!isDragScroller) return;
+        const dx = e.clientX - startX;
+        scroller.scrollLeft = startSl - dx;
+        updateInvActionsSlide();
+    });
+    const stopScrollerDrag = () => { isDragScroller = false; };
+    scroller.addEventListener('pointerup', stopScrollerDrag);
+    scroller.addEventListener('pointercancel', stopScrollerDrag);
 
     let dragging = false;
     slide.addEventListener('pointerdown', e => {
@@ -4907,23 +5021,48 @@ function initInvActionsSlide() {
         dragging = true;
         slide.setPointerCapture?.(e.pointerId);
         const rect = slide.getBoundingClientRect();
-        scrollToRatio((e.clientX - rect.left) / rect.width);
+        let r = (e.clientX - rect.left) / rect.width;
+        if (isRtl()) r = 1 - r;
+        scrollToRatio(r);
         e.preventDefault();
     });
     slide.addEventListener('pointermove', e => {
         if (!dragging) return;
         const rect = slide.getBoundingClientRect();
-        scrollToRatio((e.clientX - rect.left) / rect.width);
+        let r = (e.clientX - rect.left) / rect.width;
+        if (isRtl()) r = 1 - r;
+        scrollToRatio(r);
     });
     const endDrag = () => { dragging = false; };
     slide.addEventListener('pointerup', endDrag);
     slide.addEventListener('pointercancel', endDrag);
 
+    window.addEventListener('resize', updateInvActionsSlide);
+    if (typeof ResizeObserver !== 'undefined') {
+        new ResizeObserver(updateInvActionsSlide).observe(scroller);
+        new ResizeObserver(updateInvActionsSlide).observe(slide);
+    }
+
     requestAnimationFrame(updateInvActionsSlide);
     setTimeout(updateInvActionsSlide, 50);
     setTimeout(updateInvActionsSlide, 300);
-    setTimeout(updateInvActionsSlide, 1000);
 }
+
+// Prevent browser/viewport zooming (Ctrl+Wheel, Ctrl++, Ctrl+-, Pinch)
+window.addEventListener('wheel', e => {
+    if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+    }
+}, { passive: false });
+
+window.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '_' || e.key === '0' || e.code === 'NumpadAdd' || e.code === 'NumpadSubtract')) {
+        e.preventDefault();
+    }
+});
+
+window.addEventListener('gesturestart', e => e.preventDefault());
+window.addEventListener('gesturechange', e => e.preventDefault());
 
 function openFromSupplierModal() {
     fillSupplierSelect(document.getElementById('fs-supplier'));
@@ -6447,8 +6586,22 @@ function setupActions() {
         renderBarcodes();
     });
 
+    document.querySelectorAll('input[name="p-sell-by"]').forEach(r => {
+        r.addEventListener('change', () => onProductTypeChange());
+    });
+    document.querySelectorAll('input[name="p-type"]').forEach(r => {
+        r.addEventListener('change', () => onProductTypeChange());
+    });
+
     document.querySelectorAll('[data-close]').forEach(btn => btn.onclick = () => closeModal(btn.getAttribute('data-close')));
-    document.querySelectorAll('.modal-overlay:not(#confirm-modal)').forEach(ov => ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('active'); }));
+    document.querySelectorAll('.modal-overlay:not(#confirm-modal)').forEach(ov => ov.addEventListener('click', e => {
+        if (e.target === ov) {
+            if (ov.id === 'license-modal' && document.getElementById('license-modal')?.classList.contains('license-wall-blocking')) {
+                return;
+            }
+            closeModal(ov.id);
+        }
+    }));
 
     document.getElementById('inv-search').oninput = () => renderInventory();
     document.getElementById('inv-filter')?.addEventListener('change', e => { invFilter = e.target.value; renderInventory(); });
@@ -6491,19 +6644,27 @@ function setupActions() {
     document.getElementById('supp-search').oninput = () => renderSuppliers();
     document.getElementById('bar-search').oninput = () => renderBarcodes();
 
-    document.getElementById('btn-refresh-dashboard')?.addEventListener('click', () => loadData());
-    document.getElementById('btn-refresh-inventory')?.addEventListener('click', () => loadData());
-    document.getElementById('btn-refresh-sales')?.addEventListener('click', () => loadData());
-    document.getElementById('btn-refresh-reports')?.addEventListener('click', async () => { await loadReports(); renderReports(); });
-    document.getElementById('btn-refresh-history')?.addEventListener('click', async () => { await loadHistory(); renderHistory(); });
-    document.getElementById('btn-refresh-quotations')?.addEventListener('click', () => loadData());
+    const refreshWithToast = async (fn) => {
+        try {
+            if (typeof fn === 'function') await fn();
+            else await loadData();
+            toast(tr('app_refreshed'), 'success');
+        } catch (e) { console.error(e); }
+    };
+
+    document.getElementById('btn-refresh-dashboard')?.addEventListener('click', () => refreshWithToast());
+    document.getElementById('btn-refresh-inventory')?.addEventListener('click', () => refreshWithToast());
+    document.getElementById('btn-refresh-sales')?.addEventListener('click', () => refreshWithToast());
+    document.getElementById('btn-refresh-reports')?.addEventListener('click', () => refreshWithToast(async () => { await loadReports(); renderReports(); }));
+    document.getElementById('btn-refresh-history')?.addEventListener('click', () => refreshWithToast(async () => { await loadHistory(); renderHistory(); }));
+    document.getElementById('btn-refresh-quotations')?.addEventListener('click', () => refreshWithToast());
     document.getElementById('btn-quote-print')?.addEventListener('click', () => printQuotationPreview());
     document.getElementById('btn-quote-export')?.addEventListener('click', () => exportQuotationPreview());
-    document.getElementById('btn-refresh-customers')?.addEventListener('click', () => loadData());
-    document.getElementById('btn-refresh-suppliers')?.addEventListener('click', () => loadData());
-    document.getElementById('btn-refresh-expenses')?.addEventListener('click', () => loadData());
-    document.getElementById('btn-refresh-barcodes')?.addEventListener('click', () => loadData());
-    document.getElementById('btn-refresh-users')?.addEventListener('click', () => loadData());
+    document.getElementById('btn-refresh-customers')?.addEventListener('click', () => refreshWithToast());
+    document.getElementById('btn-refresh-suppliers')?.addEventListener('click', () => refreshWithToast());
+    document.getElementById('btn-refresh-expenses')?.addEventListener('click', () => refreshWithToast());
+    document.getElementById('btn-refresh-barcodes')?.addEventListener('click', () => refreshWithToast());
+    document.getElementById('btn-refresh-users')?.addEventListener('click', () => refreshWithToast());
 
     const btnExpInv = document.getElementById('btn-export-inventory');
     if (btnExpInv) btnExpInv.onclick = () => exportCsv(products.map(p => ({
@@ -6567,9 +6728,11 @@ function setupActions() {
                 method: 'POST',
                 body: JSON.stringify({ licenseKey, customerName: 'Licensed User' })
             });
+            window._license = await api('/api/license');
+            document.getElementById('license-modal')?.classList.remove('license-wall-blocking');
+            checkLicenseExpirationWall();
             closeModal('license-modal');
             toast(tr('license_ok'), 'success');
-            await loadLicense();
             renderLicense();
             applyI18n();
         } catch (e) {
@@ -6679,10 +6842,16 @@ function calcPress(key) {
     updateCalcDisplay();
 }
 
-const NOTIF_DISMISS_KEY = 'a2z_dismissed_notifs';
+const NOTIF_DISMISS_KEY = 'generic_dismissed_notifs';
 
 function notifKey(n) {
-    return `${n.type || ''}|${n.title || ''}|${n.message || ''}`;
+    if (!n) return '';
+    if (n.key) return n.key;
+    const type = n.type || '';
+    const target = n.target || '';
+    const raw = n.message || n.title || '';
+    const clean = raw.replace(/[\d]+|\(.*?\)|(low|out of stock|alert|منخفض|متبقي|نافد|تنبيه|نقص|المخزون)/gi, '').trim();
+    return `${type}|${target}|${clean}`;
 }
 
 const NOTIF_TARGETS = {
@@ -7034,16 +7203,22 @@ const scaleManager = {
     manualMode: false,
 
     async init() {
-        document.getElementById('btnScaleSettings')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
+        const toggleSettings = (e) => {
+            if (e) { e.preventDefault(); e.stopPropagation(); }
             const settings = document.getElementById('scaleSettings');
             const panel = document.getElementById('scalePanel');
-            if (!settings) return;
+            if (!settings || !panel) return;
+            panel.hidden = false;
             const opening = settings.classList.contains('hidden');
             settings.classList.toggle('hidden', !opening);
-            if (panel) panel.classList.toggle('settings-open', opening);
-        });
+            panel.classList.toggle('settings-open', opening);
+            if (opening) {
+                this.refreshPorts();
+                this.refreshStatus(true);
+            }
+        };
+        const gearBtn = document.getElementById('btnScaleSettings');
+        if (gearBtn) gearBtn.onclick = toggleSettings;
         document.getElementById('btnScaleConnect')?.addEventListener('click', () => this.connect());
         document.getElementById('btnScaleDisconnect')?.addEventListener('click', () => this.disconnect());
         document.getElementById('btnScaleTare')?.addEventListener('click', () => this.tare());
@@ -7096,28 +7271,31 @@ const scaleManager = {
     },
 
     selectForWeighing(p) {
-        lastTappedProductId = p?.id ?? null;
-        this.pending = null;
-        this.manualMode = true;
-        // No hardware scale on a2z Tech main — prompt for kg
-        const raw = window.prompt(tr('scale_weight_lbl') + ' (kg)', '0.100');
-        const weightKg = Math.max(0, Number(raw) || 0);
-        this.setManualWeight(weightKg);
+        if (!p) return;
+        lastTappedProductId = p.id;
+        const panel = document.getElementById('scalePanel');
+        if (panel) {
+            panel.hidden = false;
+            panel.classList.remove('is-collapsed');
+        }
         this.renderSelected();
-        if (weightKg > 0 && p) {
+        const currentW = this.getManualWeight();
+        if (currentW > 0) {
             this.pending = {
                 productId: p.id,
-                weightKg,
-                linePrice: this.calcLinePrice(p, weightKg),
+                weightKg: currentW,
+                linePrice: this.calcLinePrice(p, currentW),
                 source: 'manual'
             };
-            this.renderCalc(weightKg, true);
             this.addWeighedProduct();
         } else {
-            this.renderCalc(0, false);
-            toast(tr('weigh_need_scale'), 'info');
+            const input = document.getElementById('scaleManualWeight');
+            if (input) {
+                input.focus();
+                input.select();
+            }
+            toast(tr('weigh_first') || `${p.name} — ${tr('scale_weight_lbl')}`, 'info');
         }
-        this.updateManualHint();
     },
 
     setSelectedProduct(p) {
@@ -7531,6 +7709,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         applyI18n();
         setupChrome();
+        try { await loadLicense(); } catch (e) { console.error('loadLicense boot error', e); }
         setupNavigation();
         setupAuth();
         try { setupActions(); } catch (e) { console.error('setupActions', e); }
@@ -7592,7 +7771,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
 
-        const saved = sessionStorage.getItem('a2z_user')   ;
+        const saved = sessionStorage.getItem('a2z_user')  ;
         if (saved) {
             try {
                 currentUser = JSON.parse(saved);
