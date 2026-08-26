@@ -23,6 +23,7 @@
   text-rendering: optimizeLegibility;
   -webkit-font-feature-settings: 'liga';
   font-feature-settings: 'liga';
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
 /* Outfit - local offline copy */
