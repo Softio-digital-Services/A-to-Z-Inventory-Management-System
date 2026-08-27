@@ -4692,7 +4692,7 @@ body:has(#inventory.active) .main-content,
 }
 .inv-card:hover { border-color: var(--primary-color); transform: translateY(-3px); box-shadow: var(--shadow-md); }
 .inv-card.inactive { opacity: 0.65; }
-.inv-card-check { position: absolute; top: 8px; inset-inline-start: 8px; }
+.inv-card-check { position: absolute; top: 8px; inset-inline-start: 8px; z-index: 1; }
 .inv-card-add {
     display: flex;
     flex-direction: column;
