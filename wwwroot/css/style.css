@@ -4618,7 +4618,6 @@ body.rtl .titlebar-tools { direction: rtl; }
 #inventory .inv-layout:not([hidden]) {
     display: grid !important;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
-    grid-auto-rows: max-content !important;
     align-content: start !important;
     gap: 1rem !important;
 }
@@ -4687,9 +4686,9 @@ body:has(#inventory.active) .main-content,
     position: relative;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    aspect-ratio: 2 / 3;
+    min-height: 0;
     box-sizing: border-box;
-    min-height: 235px;
 }
 .inv-card:hover { border-color: var(--primary-color); transform: translateY(-3px); box-shadow: var(--shadow-md); }
 .inv-card.inactive { opacity: 0.65; }
@@ -4699,8 +4698,8 @@ body:has(#inventory.active) .main-content,
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 235px;
-    height: 100%;
+    aspect-ratio: 2 / 3;
+    min-height: 0;
     border-style: dashed;
     color: var(--text-muted);
     box-sizing: border-box;
@@ -4708,7 +4707,15 @@ body:has(#inventory.active) .main-content,
 .inv-card-add .material-symbols-rounded { font-size: 2.5rem; opacity: 0.4; margin-bottom: 8px; }
 .inv-card h3 { font-size: 0.92rem; margin: 8px 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .inv-card .inv-card-meta { color: var(--text-muted); font-size: 0.78rem; margin-bottom: 4px; }
-.inv-card .inv-card-img { width: 100%; height: 100px; object-fit: cover; border-radius: 10px; margin-bottom: 8px; }
+.inv-card .inv-card-img {
+    width: 100%;
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 72px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-bottom: 8px;
+}
 .inv-card .price { font-weight: 700; color: var(--primary-color); }
 
 .product-form-grid {
