@@ -5580,6 +5580,23 @@ body.rtl #titlebar-tools {
 .settings-page-header > div {
   text-align: start;
 }
+body.rtl .settings-page-header,
+body.rtl #settings .page-header {
+  direction: rtl !important;
+  text-align: right !important;
+  justify-content: flex-start !important;
+}
+body.rtl .settings-page-header > div,
+body.rtl #settings .page-header > div {
+  direction: rtl !important;
+  text-align: right !important;
+}
+body.rtl .settings-page-header h1,
+body.rtl .settings-page-header p,
+body.rtl #settings .page-header h1,
+body.rtl #settings .page-header p {
+  text-align: right !important;
+}
 .settings-card-footer {
   display: flex;
   justify-content: flex-end;
