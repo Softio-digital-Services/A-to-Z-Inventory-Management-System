@@ -4617,6 +4617,10 @@ body.rtl .titlebar-tools { direction: rtl; }
 #inventory #inv-cards:not([hidden]),
 #inventory .inv-layout:not([hidden]) {
     display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
+    grid-auto-rows: max-content !important;
+    align-content: start !important;
+    gap: 1rem !important;
 }
 
 /* Inventory: pin toolbar; only products scroll */
@@ -4681,13 +4685,25 @@ body:has(#inventory.active) .main-content,
     transition: var(--transition);
     text-align: center;
     position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-sizing: border-box;
+    min-height: 235px;
 }
 .inv-card:hover { border-color: var(--primary-color); transform: translateY(-3px); box-shadow: var(--shadow-md); }
 .inv-card.inactive { opacity: 0.65; }
 .inv-card-check { position: absolute; top: 8px; inset-inline-start: 8px; }
 .inv-card-add {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    min-height: 200px; border-style: dashed; color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 235px;
+    height: 100%;
+    border-style: dashed;
+    color: var(--text-muted);
+    box-sizing: border-box;
 }
 .inv-card-add .material-symbols-rounded { font-size: 2.5rem; opacity: 0.4; margin-bottom: 8px; }
 .inv-card h3 { font-size: 0.92rem; margin: 8px 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
