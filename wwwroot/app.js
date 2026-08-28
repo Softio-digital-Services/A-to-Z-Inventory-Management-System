@@ -1252,6 +1252,125 @@ const exportCsv = (rows, filename) => {
     URL.revokeObjectURL(a.href);
 };
 
+async function downloadServerExport(path, fallbackName, onFallback) {
+    try {
+        const res = await fetch(API + path, { credentials: 'same-origin' });
+        if (!res.ok) {
+            if (res.status === 404 && typeof onFallback === 'function') {
+                onFallback();
+                toast(tr('export_csv_fallback') || 'Exported as CSV — restart app for Excel auto-fit columns', 'success');
+                return;
+            }
+            let msg = res.statusText;
+            try { const j = await res.json(); msg = j.error || j.title || msg; } catch { /* ignore */ }
+            throw new Error(msg || 'Export failed');
+        }
+        const blob = await res.blob();
+        const cd = res.headers.get('content-disposition') || '';
+        const match = /filename\*?=(?:UTF-8''|")?([^";]+)/i.exec(cd);
+        const filename = match ? decodeURIComponent(match[1].replace(/"/g, '')) : fallbackName;
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+function toastImportResult(res) {
+    const ok = (res?.imported || 0) + (res?.updated || 0);
+    if (!ok) return toast(tr('empty_list'), 'error');
+    let msg = tr('import_ok');
+    if (res.imported) msg += ` (+${res.imported})`;
+    if (res.updated) msg += ` (~${res.updated})`;
+    if (res.skipped) msg += `, skip ${res.skipped}`;
+    toast(msg, 'success');
+}
+
+function productExportRow(p) {
+    const imagePath = p.imagePath || (p.image ? String(p.image).replace(/^\//, '') : '');
+    return {
+        part_number: p.sku || '',
+        part_name: p.name || '',
+        description: p.description || '',
+        category_name: p.category || 'General',
+        supplier_id: p.supplierId ?? '',
+        supplier_name: p.supplierName || '',
+        quantity_in_stock: p.stock ?? 0,
+        selling_price: p.price ?? 0,
+        purchase_price: p.cost ?? 0,
+        minimum_stock_level: p.minStock ?? 0,
+        reorder_quantity: p.reorderQuantity ?? 0,
+        location: p.location || '',
+        shelf: p.shelf || '',
+        barcode: p.barcode || '',
+        unit_of_measure: p.uom || '',
+        batch_number: p.batch || '',
+        expiry_date: p.expiry || '',
+        item_type: p.itemType || 'Product',
+        is_sales_item: p.isSalesItem !== false ? 1 : 0,
+        is_purchase_item: p.isPurchaseItem ? 1 : 0,
+        is_inactive: p.isInactive ? 1 : 0,
+        tax_rate: p.taxRate ?? 0,
+        is_stock_tracked: p.isStockTracked !== false ? 1 : 0,
+        sell_by_weight: p.sellByWeight ? 1 : 0,
+        price2: p.price2 ?? 0,
+        price3: p.price3 ?? 0,
+        price4: p.price4 ?? 0,
+        part_image: imagePath,
+        status: p.status || 'Active'
+    };
+}
+
+function customerExportRow(c) {
+    return {
+        CustomerName: c.name || '',
+        Phone: c.phone || '',
+        Email: c.email || '',
+        Address: c.address || '',
+        CustomerType: c.type || 'Regular',
+        Balance: c.balance ?? 0,
+        CreditLimit: c.creditLimit ?? 1000,
+        PaymentDueDate: c.dueDate ? String(c.dueDate).slice(0, 10) : '',
+        ReminderDays: c.reminderDays ?? 0
+    };
+}
+
+function supplierExportRow(s) {
+    return {
+        SupplierName: s.name || '',
+        ContactPerson: s.contact || '',
+        Email: s.email || '',
+        Phone: s.phone || '',
+        Address: s.address || '',
+        Type: s.type || 'Regular',
+        City: '',
+        PostalCode: '',
+        Website: '',
+        Notes: '',
+        Balance: s.balance ?? 0,
+        PaymentDueDate: s.dueDate ? String(s.dueDate).slice(0, 10) : '',
+        ReminderDays: s.reminderDays ?? 0
+    };
+}
+
+function historyExportRow(r) {
+    return {
+        date: csvCell(r, 'date', 'order_date', 'timestamp', 'orderdate'),
+        action: csvCell(r, 'action', 'action_type', 'type'),
+        item: csvCell(r, 'item', 'part_name', 'name', 'sku'),
+        customer: csvCell(r, 'customer', 'customer_name', 'customername'),
+        details: csvCell(r, 'details', 'description', 'desc'),
+        user: csvCell(r, 'user', 'username'),
+        status: csvCell(r, 'status'),
+        payment: csvCell(r, 'payment', 'payment_status', 'paymentstatus'),
+        total: parseFloat(csvCell(r, 'total', 'total_amount', 'amount') || '0') || 0
+    };
+}
+
+
+
+
 function parseCsvLine(line) {
     const cols = [];
     let cur = '', inQ = false;
@@ -5763,82 +5882,33 @@ async function viewOrder(orderId) {
 }
 
 async function importCustomersCsv(file) {
-    const text = await file.text();
-    const lines = text.split(/\r?\n/).filter(l => l.trim());
-    if (lines.length < 2) return toast(tr('empty_list'), 'error');
-    const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim().toLowerCase());
-    const idx = (k) => headers.indexOf(k);
-    let ok = 0;
-    for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].match(/("([^"]|"")*"|[^,]*)/g)?.map(c => c.replace(/^"|"$/g, '').replace(/""/g, '"').trim()) || [];
-        const name = cols[idx('name')] || '';
-        if (!name) continue;
-        try {
-            await api('/api/customers', { method: 'POST', body: JSON.stringify({
-                name,
-                phone: cols[idx('phone')] || '',
-                email: cols[idx('email')] || '',
-                address: cols[idx('address')] || '',
-                type: 'Regular'
-            })});
-            ok++;
-        } catch (e) { console.error(e); }
-    }
-    toast(ok ? tr('saved_ok') + ' (' + ok + ')' : tr('empty_list'), ok ? 'success' : 'error');
-    await loadData();
+    const { headers, rows } = await parseCsvFile(file);
+    if (!rows.length) return toast(tr('empty_list'), 'error');
+    try {
+        const res = await api('/api/customers/import', { method: 'POST', body: JSON.stringify({ rows, headers }) });
+        toastImportResult(res);
+        await loadData();
+    } catch (e) { toast(e.message, 'error'); }
 }
 
 async function importSuppliersCsv(file) {
-    const text = await file.text();
-    const lines = text.split(/\r?\n/).filter(l => l.trim());
-    if (lines.length < 2) return toast(tr('empty_list'), 'error');
-    const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim().toLowerCase());
-    const idx = (k) => headers.indexOf(k);
-    let ok = 0;
-    for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].match(/("([^"]|"")*"|[^,]*)/g)?.map(c => c.replace(/^"|"$/g, '').replace(/""/g, '"').trim()) || [];
-        const name = cols[idx('name')] || '';
-        if (!name) continue;
-        try {
-            await api('/api/suppliers', { method: 'POST', body: JSON.stringify({
-                name,
-                phone: cols[idx('phone')] || '',
-                email: cols[idx('email')] || '',
-                address: cols[idx('address')] || '',
-                type: 'Regular'
-            })});
-            ok++;
-        } catch (e) { console.error(e); }
-    }
-    toast(ok ? tr('saved_ok') + ' (' + ok + ')' : tr('empty_list'), ok ? 'success' : 'error');
-    await loadData();
+    const { headers, rows } = await parseCsvFile(file);
+    if (!rows.length) return toast(tr('empty_list'), 'error');
+    try {
+        const res = await api('/api/suppliers/import', { method: 'POST', body: JSON.stringify({ rows, headers }) });
+        toastImportResult(res);
+        await loadData();
+    } catch (e) { toast(e.message, 'error'); }
 }
 
 async function importInventoryCsv(file) {
-    const text = await file.text();
-    const lines = text.split(/\r?\n/).filter(l => l.trim());
-    if (lines.length < 2) return toast(tr('empty_list'), 'error');
-    const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim().toLowerCase());
-    const idx = (k) => headers.indexOf(k);
-    let ok = 0;
-    for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].match(/("([^"]|"")*"|[^,]*)/g)?.map(c => c.replace(/^"|"$/g, '').replace(/""/g, '"').trim()) || [];
-        const name = cols[idx('name')] || '';
-        if (!name) continue;
-        try {
-            await api('/api/add-item', { method: 'POST', body: JSON.stringify({
-                name,
-                category: cols[idx('category')] || 'General',
-                price: parseFloat(cols[idx('price')] || '0') || 0,
-                stock: parseInt(cols[idx('stock')] || '0', 10) || 0,
-                barcode: cols[idx('barcode')] || '',
-                sku: cols[idx('sku')] || ''
-            })});
-            ok++;
-        } catch (e) { console.error(e); }
-    }
-    toast(ok ? tr('saved_ok') + ' (' + ok + ')' : tr('empty_list'), ok ? 'success' : 'error');
-    await loadData();
+    const { headers, rows } = await parseCsvFile(file);
+    if (!rows.length) return toast(tr('empty_list'), 'error');
+    try {
+        const res = await api('/api/products/import', { method: 'POST', body: JSON.stringify({ rows, headers }) });
+        toastImportResult(res);
+        await loadData();
+    } catch (e) { toast(e.message, 'error'); }
 }
 
 async function importSalesCsv(file) {
@@ -5886,6 +5956,7 @@ async function importReportsCsv(file) {
     const { rows } = await parseCsvFile(file);
     if (!rows.length) return toast(tr('empty_list'), 'error');
     const payload = rows.map(row => ({
+        rowType: csvCell(row, 'row_type', 'rowtype') || (csvCell(row, 'name', 'product') ? 'product' : 'summary'),
         name: csvCell(row, 'name', 'product', 'product_name'),
         qty: parseFloat(csvCell(row, 'qty', 'quantity') || '0') || 0,
         sales: parseFloat(csvCell(row, 'sales', 'total_sales') || '0') || 0,
@@ -5907,30 +5978,14 @@ async function importReportsCsv(file) {
 async function importExpensesCsv(file) {
     const { rows } = await parseCsvFile(file);
     if (!rows.length) return toast(tr('empty_list'), 'error');
-    let ok = 0;
-    for (const row of rows) {
-        const category = csvCell(row, 'category') || '';
-        const amount = parseFloat(csvCell(row, 'amount') || '0') || 0;
-        if (!category || !(amount > 0)) continue;
-        let expenseDate = csvCell(row, 'date', 'expensedate', 'expense_date') || '';
-        if (expenseDate && expenseDate.includes('T')) expenseDate = expenseDate.slice(0, 10);
-        if (!expenseDate) expenseDate = new Date().toISOString().slice(0, 10);
-        try {
-            await api('/api/expenses', {
-                method: 'POST',
-                body: JSON.stringify({
-                    category,
-                    amount,
-                    expenseDate,
-                    description: csvCell(row, 'description', 'desc') || '',
-                    recordedBy: currentUser?.username || 'Web'
-                })
-            });
-            ok++;
-        } catch (e) { console.error(e); }
-    }
-    toast(ok ? (tr('import_ok') || tr('saved_ok')) + ' (' + ok + ')' : tr('empty_list'), ok ? 'success' : 'error');
-    await loadData();
+    try {
+        const res = await api('/api/expenses/import', {
+            method: 'POST',
+            body: JSON.stringify({ rows, recordedBy: currentUser?.username || 'Web' })
+        });
+        toastImportResult(res);
+        await loadData();
+    } catch (e) { toast(e.message, 'error'); }
 }
 
 function setupNavigation() {
@@ -6667,43 +6722,59 @@ function setupActions() {
     document.getElementById('btn-refresh-users')?.addEventListener('click', () => refreshWithToast());
 
     const btnExpInv = document.getElementById('btn-export-inventory');
-    if (btnExpInv) btnExpInv.onclick = () => exportCsv(products.map(p => ({
-        name: p.name, sku: p.sku, category: p.category, price: p.price, stock: p.stock, barcode: p.barcode
-    })), 'inventory.csv');
+    if (btnExpInv) btnExpInv.onclick = () => downloadServerExport(
+        '/api/products/export?format=xlsx', 'inventory.xlsx',
+        () => exportCsv(products.map(productExportRow), 'inventory.csv'));
     const btnExpCust = document.getElementById('btn-export-customers');
-    if (btnExpCust) btnExpCust.onclick = () => exportCsv(customers.map(c => ({
-        name: c.name, phone: c.phone, email: c.email, address: c.address, type: c.type, balance: c.balance
-    })), 'customers.csv');
+    if (btnExpCust) btnExpCust.onclick = () => downloadServerExport(
+        '/api/customers/export?format=xlsx', 'customers.xlsx',
+        () => exportCsv(customers.map(customerExportRow), 'customers.csv'));
     const btnExpSupp = document.getElementById('btn-export-suppliers');
-    if (btnExpSupp) btnExpSupp.onclick = () => exportCsv(suppliers.map(s => ({
-        name: s.name, contact: s.contact, phone: s.phone, email: s.email, address: s.address, balance: s.balance
-    })), 'suppliers.csv');
-    document.getElementById('btn-export-sales')?.addEventListener('click', () => exportCsv(sales.map(o => ({
-        orderId: o.orderId, date: o.date, customer: o.customer, total: o.total, payment: o.paymentStatus || ''
-    })), 'sales.csv'));
+    if (btnExpSupp) btnExpSupp.onclick = () => downloadServerExport(
+        '/api/suppliers/export?format=xlsx', 'suppliers.xlsx',
+        () => exportCsv(suppliers.map(supplierExportRow), 'suppliers.csv'));
+    document.getElementById('btn-export-sales')?.addEventListener('click', () => downloadServerExport(
+        '/api/sales/export?format=xlsx', 'sales.xlsx',
+        () => exportCsv(sales.map(o => ({
+            orderId: o.orderId, date: o.date, customer: o.customer, total: o.total,
+            payment: o.paymentStatus || o.payment || ''
+        })), 'sales.csv')));
     document.getElementById('btn-export-reports')?.addEventListener('click', () => {
         const s = reportSummary || {};
-        const rows = [
-            { metric: tr('date_from'), value: toInputDate(s.fromDate) || '' },
-            { metric: tr('date_to'), value: toInputDate(s.toDate) || '' },
-            { metric: tr('rep_sales'), value: s.totalSales ?? 0 },
-            { metric: tr('rep_cost'), value: s.totalCost ?? 0 },
-            { metric: tr('rep_expenses'), value: s.totalExpenses ?? 0 },
-            { metric: tr('rep_profit_before_expenses'), value: s.totalProfit ?? 0 },
-            { metric: tr('rep_profit_after_expenses'), value: s.totalProfitAfterExpenses ?? 0 }
-        ];
-        exportCsv(rows, 'report-summary.csv');
-        if (reportTop?.length) exportCsv(reportTop.map(r => ({
-            name: r.product_name || r.ProductName,
-            qty: r.quantity_sold ?? r.QuantitySold,
-            sales: r.total_sales ?? r.TotalSales,
-            profit: r.profit ?? r.Profit
-        })), 'report-top-products.csv');
+        const from = document.getElementById('report-from')?.value || toInputDate(s.fromDate) || '';
+        const to = document.getElementById('report-to')?.value || toInputDate(s.toDate) || '';
+        const qs = new URLSearchParams({ format: 'xlsx' });
+        if (from) qs.set('from', from);
+        if (to) qs.set('to', to);
+        downloadServerExport('/api/reports/export?' + qs.toString(), 'report.xlsx', () => {
+            const rows = [
+                { row_type: 'summary', metric: tr('date_from'), value: toInputDate(s.fromDate) || '' },
+                { row_type: 'summary', metric: tr('date_to'), value: toInputDate(s.toDate) || '' },
+                { row_type: 'summary', metric: tr('rep_sales'), value: s.totalSales ?? 0 },
+                { row_type: 'summary', metric: tr('rep_cost'), value: s.totalCost ?? 0 },
+                { row_type: 'summary', metric: tr('rep_expenses'), value: s.totalExpenses ?? 0 },
+                { row_type: 'summary', metric: tr('rep_profit_before_expenses'), value: s.totalProfit ?? 0 },
+                { row_type: 'summary', metric: tr('rep_profit_after_expenses'), value: s.totalProfitAfterExpenses ?? 0 },
+                ...(reportTop || []).map(r => ({
+                    row_type: 'product',
+                    name: r.product_name || r.ProductName || '',
+                    qty: r.quantity_sold ?? r.QuantitySold ?? 0,
+                    sales: r.total_sales ?? r.TotalSales ?? 0,
+                    profit: r.profit ?? r.Profit ?? 0
+                }))
+            ];
+            exportCsv(rows, 'report-export.csv');
+        });
     });
-    document.getElementById('btn-export-history')?.addEventListener('click', () => exportCsv(window._historyRows || [], 'history.csv'));
-    document.getElementById('btn-export-expenses')?.addEventListener('click', () => exportCsv(expenses.map(e => ({
-        date: e.expenseDate, category: e.category, amount: e.amount, description: e.description, paid: e.isPaid
-    })), 'expenses.csv'));
+    document.getElementById('btn-export-history')?.addEventListener('click', () => downloadServerExport(
+        '/api/history/export?format=xlsx', 'history.xlsx',
+        () => exportCsv((window._historyRows || []).map(historyExportRow), 'history.csv')));
+    document.getElementById('btn-export-expenses')?.addEventListener('click', () =>
+        downloadServerExport('/api/expenses/export?format=xlsx', 'expenses.xlsx', () =>
+            exportCsv(expenses.map(e => ({
+                date: e.expenseDate, category: e.category, amount: e.amount, description: e.description,
+                paid: e.isPaid ? 1 : 0, recurring: e.isRecurring ? 1 : 0
+            })), 'expenses.csv')));
 
     document.getElementById('btn-activate-license')?.addEventListener('click', openLicenseModal);
     document.getElementById('btn-copy-hwid')?.addEventListener('click', async () => {

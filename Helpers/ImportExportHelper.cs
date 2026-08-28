@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -75,12 +76,22 @@ namespace InventorySystem.Helpers
                         continue;
 
                     string[] fields = ParseCsvLine(lines[i]);
-                    
-                    // Ensure we have the right number of fields
-                    if (fields.Length == dt.Columns.Count)
+
+                    // Pad or trim so rows are not silently dropped
+                    if (fields.Length < dt.Columns.Count)
                     {
-                        dt.Rows.Add(fields);
+                        var padded = new string[dt.Columns.Count];
+                        Array.Copy(fields, padded, fields.Length);
+                        for (int f = fields.Length; f < padded.Length; f++)
+                            padded[f] = "";
+                        fields = padded;
                     }
+                    else if (fields.Length > dt.Columns.Count)
+                    {
+                        fields = fields.Take(dt.Columns.Count).ToArray();
+                    }
+
+                    dt.Rows.Add(fields);
                 }
 
                 return dt;
@@ -95,42 +106,6 @@ namespace InventorySystem.Helpers
         #endregion
 
         #region Excel Export/Import (Simple TSV Format)
-
-        /// <summary>
-        /// Exports a DataTable to Excel-compatible TSV file
-        /// </summary>
-        public static bool ExportToExcel(DataTable dataTable, string filePath, string sheetName = "Sheet1")
-        {
-            try
-            {
-                // For now, export as tab-separated values which Excel can open
-                // This avoids the ClosedXML dependency issue
-                StringBuilder sb = new StringBuilder();
-
-                // Write headers
-                IEnumerable<string> columnNames = dataTable.Columns.Cast<DataColumn>()
-                    .Select(column => column.ColumnName);
-                sb.AppendLine(string.Join("\t", columnNames));
-
-                // Write rows
-                foreach (DataRow row in dataTable.Rows)
-                {
-                    IEnumerable<string> fields = row.ItemArray
-                        .Select(field => field?.ToString()?.Replace("\t", " ") ?? "");
-                    sb.AppendLine(string.Join("\t", fields));
-                }
-
-                // Save with .xls extension (Excel will open TSV files)
-                string tsvPath = filePath.Replace(".xlsx", ".xls");
-                File.WriteAllText(tsvPath, sb.ToString(), Encoding.UTF8);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                ErrorLogger.LogError(ex, "ImportExportHelper.ExportToExcel");
-                return false;
-            }
-        }
 
         /// <summary>
         /// Imports data from Excel-compatible TSV file to DataTable
@@ -159,12 +134,21 @@ namespace InventorySystem.Helpers
                         continue;
 
                     string[] fields = lines[i].Split('\t');
-                    
-                    // Ensure we have the right number of fields
-                    if (fields.Length == dt.Columns.Count)
+
+                    if (fields.Length < dt.Columns.Count)
                     {
-                        dt.Rows.Add(fields);
+                        var padded = new string[dt.Columns.Count];
+                        Array.Copy(fields, padded, fields.Length);
+                        for (int f = fields.Length; f < padded.Length; f++)
+                            padded[f] = "";
+                        fields = padded;
                     }
+                    else if (fields.Length > dt.Columns.Count)
+                    {
+                        fields = fields.Take(dt.Columns.Count).ToArray();
+                    }
+
+                    dt.Rows.Add(fields);
                 }
 
                 return dt;
@@ -226,7 +210,7 @@ namespace InventorySystem.Helpers
                 {
                     ws.Cell(row, 1).Value = label;
                     ws.Cell(row, 2).Value = value;
-                    ws.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
+                    ws.Cell(row, 2).Style.NumberFormat.Format = CurrencyFormat;
                     row++;
                 }
 
@@ -271,8 +255,9 @@ namespace InventorySystem.Helpers
                         ws.Cell(row, 5).Value = Convert.ToDecimal(dr["total_cost"] == DBNull.Value ? 0 : dr["total_cost"]);
                         ws.Cell(row, 6).Value = Convert.ToDecimal(dr["profit"] == DBNull.Value ? 0 : dr["profit"]);
 
-                        for (int c = 2; c <= 6; c++)
-                            ws.Cell(row, c).Style.NumberFormat.Format = "#,##0.00";
+                        ws.Cell(row, 2).Style.NumberFormat.Format = "#,##0.##";
+                        for (int c = 3; c <= 6; c++)
+                            ws.Cell(row, c).Style.NumberFormat.Format = CurrencyFormat;
                         row++;
                     }
                 }
@@ -288,26 +273,27 @@ namespace InventorySystem.Helpers
                 {
                     ws.Cell(row, 1).Value = L("Rep_ColQuantitySold", "Quantity Sold");
                     ws.Cell(row, 2).FormulaA1 = $"SUM(B{dataStart}:B{dataEnd})";
+                    ws.Cell(row, 2).Style.NumberFormat.Format = "#,##0.##";
                     row++;
                     ws.Cell(row, 1).Value = L("Rep_TotalSales", "Total Sales");
                     ws.Cell(row, 2).FormulaA1 = $"SUM(D{dataStart}:D{dataEnd})";
-                    ws.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
+                    ws.Cell(row, 2).Style.NumberFormat.Format = CurrencyFormat;
                     row++;
                     ws.Cell(row, 1).Value = L("Rep_ColTotalCost", "Total Cost");
                     ws.Cell(row, 2).FormulaA1 = $"SUM(E{dataStart}:E{dataEnd})";
-                    ws.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
+                    ws.Cell(row, 2).Style.NumberFormat.Format = CurrencyFormat;
                     row++;
                     ws.Cell(row, 1).Value = L("Rep_TotalProfit", "Total Profit");
                     ws.Cell(row, 2).FormulaA1 = $"SUM(F{dataStart}:F{dataEnd})";
-                    ws.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
+                    ws.Cell(row, 2).Style.NumberFormat.Format = CurrencyFormat;
                     row++;
                     ws.Cell(row, 1).Value = L("Rep_MonthlyExpenses", "Monthly Expenses");
                     ws.Cell(row, 2).Value = summary.TotalExpenses;
-                    ws.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
+                    ws.Cell(row, 2).Style.NumberFormat.Format = CurrencyFormat;
                     row++;
                     ws.Cell(row, 1).Value = L("Rep_ProfitAfterExpenses", "Profit After Expenses");
                     ws.Cell(row, 2).Value = summary.TotalProfitAfterExpenses;
-                    ws.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
+                    ws.Cell(row, 2).Style.NumberFormat.Format = CurrencyFormat;
                     ws.Cell(row, 1).Style.Font.Bold = true;
                     ws.Cell(row, 2).Style.Font.Bold = true;
                 }
@@ -319,13 +305,302 @@ namespace InventorySystem.Helpers
                     AddMetric(L("Rep_ProfitAfterExpenses", "Profit After Expenses"), summary.TotalProfitAfterExpenses);
                 }
 
-                ws.Columns().AdjustToContents();
+                AutoFitUsedRange(ws);
                 workbook.SaveAs(filePath);
                 return true;
             }
             catch (Exception ex)
             {
                 ErrorLogger.LogError(ex, "ImportExportHelper.ExportSalesReport");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Exports a DataTable to an .xlsx byte array with auto-fitted columns.
+        /// </summary>
+        public static byte[] ExportDataTableToXlsx(DataTable dataTable, string sheetName = "Export")
+        {
+            if (dataTable == null) return Array.Empty<byte>();
+            return ExportTablesToXlsx(new[] { (sheetName, dataTable) });
+        }
+
+        /// <summary>
+        /// Exports several DataTables to one workbook, one worksheet each, all columns auto-fitted.
+        /// </summary>
+        public static byte[] ExportTablesToXlsx(
+            System.Collections.Generic.IEnumerable<(string SheetName, DataTable Table)> sheets)
+        {
+            if (sheets == null) return Array.Empty<byte>();
+            using var workbook = new XLWorkbook();
+
+            int added = 0;
+            foreach (var (sheetName, table) in sheets)
+            {
+                if (table == null) continue;
+                WriteSheet(workbook, sheetName, table, added);
+                added++;
+            }
+
+            if (added == 0) workbook.Worksheets.Add("Export");
+
+            using var ms = new MemoryStream();
+            workbook.SaveAs(ms);
+            return ms.ToArray();
+        }
+
+        /// <summary>
+        /// Key used on DataColumn.ExtendedProperties to give a column an Excel number format,
+        /// e.g. CurrencyFormat for money columns.
+        /// </summary>
+        public const string NumberFormatKey = "numberFormat";
+
+        /// <summary>Excel/.NET number format for money columns. Values are stored in USD.</summary>
+        public const string CurrencyFormat = "$#,##0.00";
+
+        private static string ColumnNumberFormat(DataColumn column) =>
+            column?.ExtendedProperties[NumberFormatKey] as string;
+
+        /// <summary>
+        /// Tags the named columns as money so the Excel writer renders them with a currency
+        /// symbol and sizes them to the formatted text. Unknown column names are ignored.
+        /// </summary>
+        public static DataTable MarkCurrencyColumns(DataTable dataTable, params string[] columns)
+        {
+            if (dataTable == null || columns == null) return dataTable;
+            foreach (string name in columns)
+            {
+                if (!string.IsNullOrEmpty(name) && dataTable.Columns.Contains(name))
+                    dataTable.Columns[name].ExtendedProperties[NumberFormatKey] = CurrencyFormat;
+            }
+            return dataTable;
+        }
+
+        private static void WriteSheet(XLWorkbook workbook, string sheetName, DataTable table, int index)
+        {
+            string name = string.IsNullOrWhiteSpace(sheetName) ? $"Sheet{index + 1}" : sheetName.Trim();
+            foreach (char bad in new[] { ':', '\\', '/', '?', '*', '[', ']' })
+                name = name.Replace(bad, ' ');
+            if (name.Length > 31) name = name.Substring(0, 31);
+            while (workbook.Worksheets.Contains(name))
+                name = (name.Length > 28 ? name.Substring(0, 28) : name) + "_" + (index + 1);
+
+            var ws = workbook.Worksheets.Add(name);
+
+            int colCount = table.Columns.Count;
+            for (int c = 0; c < colCount; c++)
+            {
+                ws.Cell(1, c + 1).Value = table.Columns[c].ColumnName;
+                ws.Cell(1, c + 1).Style.Font.Bold = true;
+                ws.Cell(1, c + 1).Style.Fill.BackgroundColor = XLColor.FromHtml("#F8FAFC");
+            }
+
+            for (int r = 0; r < table.Rows.Count; r++)
+            {
+                for (int c = 0; c < colCount; c++)
+                    SetExportCellValue(ws.Cell(r + 2, c + 1), table.Rows[r][c]);
+            }
+
+            // Applied to the data rows only so the bold header keeps its plain text style.
+            if (table.Rows.Count > 0)
+            {
+                for (int c = 0; c < colCount; c++)
+                {
+                    string format = ColumnNumberFormat(table.Columns[c]);
+                    if (string.IsNullOrEmpty(format)) continue;
+                    ws.Range(2, c + 1, table.Rows.Count + 1, c + 1)
+                      .Style.NumberFormat.Format = format;
+                }
+            }
+
+            AutoFitWorksheetColumns(ws, table);
+        }
+
+        private static void SetExportCellValue(IXLCell cell, object val)
+        {
+            if (val == null || val == DBNull.Value)
+            {
+                cell.Value = "";
+                return;
+            }
+
+            switch (val)
+            {
+                case DateTime dt:
+                    cell.Value = dt;
+                    cell.Style.DateFormat.Format = ExportDateFormat(dt);
+                    return;
+                case bool b:
+                    cell.Value = b;
+                    return;
+                case byte or sbyte or short or ushort or int or uint or long or ulong:
+                    cell.Value = Convert.ToInt64(val);
+                    return;
+                case float or double or decimal:
+                    cell.Value = Convert.ToDouble(val);
+                    return;
+            }
+
+            string text = val.ToString()?.Trim() ?? "";
+            if (DateTime.TryParse(text, out DateTime parsed))
+            {
+                cell.Value = parsed;
+                cell.Style.DateFormat.Format = ExportDateFormat(parsed);
+                return;
+            }
+
+            cell.Value = text;
+        }
+
+        /// <summary>
+        /// Keeps the time component for timestamps (history, orders) but not for plain dates.
+        /// </summary>
+        private static string ExportDateFormat(DateTime value) =>
+            value.TimeOfDay == TimeSpan.Zero ? "yyyy-MM-dd" : "yyyy-MM-dd HH:mm:ss";
+
+        private const double BoldCharFactor = 1.18;
+        private const double WidthPadding = 2.2;
+        private const double MinColumnWidth = 8;
+        private const double MaxColumnWidth = 80;
+
+        /// <summary>
+        /// Sizes every column so the longest header/value is fully visible without manual resizing.
+        /// Header text is bold, so it needs slightly more room per character than body text.
+        /// </summary>
+        private static void AutoFitWorksheetColumns(IXLWorksheet ws, DataTable dataTable)
+        {
+            if (dataTable == null || dataTable.Columns.Count == 0) return;
+
+            int lastRow = Math.Max(1, dataTable.Rows.Count + 1);
+
+            for (int c = 1; c <= dataTable.Columns.Count; c++)
+            {
+                string header = dataTable.Columns[c - 1].ColumnName ?? "";
+                string format = ColumnNumberFormat(dataTable.Columns[c - 1]);
+                double target = (header.Length * BoldCharFactor) + WidthPadding;
+
+                for (int r = 0; r < dataTable.Rows.Count; r++)
+                {
+                    double len = ExportCellDisplayLength(dataTable.Rows[r][c - 1], format) + WidthPadding;
+                    if (len > target) target = len;
+                }
+
+                ws.Column(c).AdjustToContents(1, lastRow);
+                double measured = ws.Column(c).Width;
+                if (measured > target) target = measured;
+
+                ws.Column(c).Width = Math.Clamp(target, MinColumnWidth, MaxColumnWidth);
+                ws.Column(c).Style.Alignment.WrapText = false;
+                ws.Column(c).Style.Alignment.ShrinkToFit = false;
+            }
+        }
+
+        /// <summary>
+        /// Auto-fits a hand-built sheet that has no backing DataTable, measuring each written cell.
+        /// Bold and larger fonts are scaled up since they consume more width per character.
+        /// </summary>
+        private static void AutoFitUsedRange(IXLWorksheet ws)
+        {
+            var used = ws?.RangeUsed();
+            if (used == null) return;
+
+            int firstCol = used.RangeAddress.FirstAddress.ColumnNumber;
+            int lastCol = used.RangeAddress.LastAddress.ColumnNumber;
+            int firstRow = used.RangeAddress.FirstAddress.RowNumber;
+            int lastRow = used.RangeAddress.LastAddress.RowNumber;
+
+            for (int c = firstCol; c <= lastCol; c++)
+            {
+                double target = MinColumnWidth;
+
+                for (int r = firstRow; r <= lastRow; r++)
+                {
+                    var cell = ws.Cell(r, c);
+                    if (cell.IsEmpty()) continue;
+
+                    string text;
+                    try
+                    {
+                        // Formula cells would force evaluation; their results are short numbers.
+                        text = cell.HasFormula ? "$0,000,000.00" : cell.GetFormattedString();
+                    }
+                    catch { continue; }
+
+                    if (string.IsNullOrEmpty(text)) continue;
+
+                    double scale = 1.0;
+                    if (cell.Style.Font.Bold) scale *= BoldCharFactor;
+                    double size = cell.Style.Font.FontSize;
+                    if (size > 11) scale *= size / 11.0;
+
+                    double len = (text.Length * scale) + WidthPadding;
+                    if (len > target) target = len;
+                }
+
+                ws.Column(c).Width = Math.Clamp(target, MinColumnWidth, MaxColumnWidth);
+                ws.Column(c).Style.Alignment.WrapText = false;
+                ws.Column(c).Style.Alignment.ShrinkToFit = false;
+            }
+        }
+
+        private static int ExportCellDisplayLength(object val, string numberFormat = null)
+        {
+            if (val == null || val == DBNull.Value) return 0;
+            if (val is DateTime dt) return ExportDateFormat(dt).Length;
+            if (val is bool b) return b ? 4 : 5;
+            if (val is byte or sbyte or short or ushort or int or uint or long or ulong
+                or float or double or decimal)
+            {
+                // Currency/thousands formatting makes the rendered text longer than the raw number.
+                if (!string.IsNullOrEmpty(numberFormat))
+                {
+                    try
+                    {
+                        return Convert.ToDecimal(val)
+                            .ToString(numberFormat, CultureInfo.InvariantCulture).Length;
+                    }
+                    catch { /* fall through to the raw length */ }
+                }
+                return val.ToString().Length;
+            }
+
+            string text = val.ToString()?.Trim() ?? "";
+            if (DateTime.TryParse(text, out DateTime parsed))
+                return ExportDateFormat(parsed).Length;
+            return text.Length;
+        }
+
+        /// <summary>
+        /// Exports a DataTable to UTF-8 CSV bytes (with BOM for Excel).
+        /// </summary>
+        public static byte[] ExportDataTableToCsvBytes(DataTable dataTable)
+        {
+            if (dataTable == null) return Array.Empty<byte>();
+            var sb = new StringBuilder();
+            sb.AppendLine(string.Join(",", dataTable.Columns.Cast<DataColumn>()
+                .Select(column => EscapeCsvField(column.ColumnName))));
+            foreach (DataRow row in dataTable.Rows)
+            {
+                sb.AppendLine(string.Join(",", row.ItemArray
+                    .Select(field => EscapeCsvField(field?.ToString() ?? ""))));
+            }
+            return Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(sb.ToString())).ToArray();
+        }
+
+        /// <summary>
+        /// Exports a DataTable to an .xlsx file with auto-fitted columns.
+        /// </summary>
+        public static bool ExportToXlsx(DataTable dataTable, string filePath, string sheetName = "Export")
+        {
+            try
+            {
+                if (dataTable == null) return false;
+                File.WriteAllBytes(filePath, ExportDataTableToXlsx(dataTable, sheetName));
+                return true;
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogError(ex, "ImportExportHelper.ExportToXlsx");
                 return false;
             }
         }

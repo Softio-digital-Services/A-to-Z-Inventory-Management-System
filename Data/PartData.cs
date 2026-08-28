@@ -68,6 +68,18 @@ namespace InventorySystem.Data
             return Convert.ToInt32(DatabaseHelper.ExecuteScalar<object>(sql, new SqliteParameter("@cat", categoryName)) ?? 0);
         }
 
+        
+        public static PartData GetById(int id)
+        {
+            if (id <= 0) return null;
+            string sql = @"SELECT p.*, c.category_name, s.supplier_name
+                           FROM parts p
+                           LEFT JOIN categories c ON p.category_id = c.id
+                           LEFT JOIN suppliers s ON p.supplier_id = s.id
+                           WHERE p.id = @id AND p.date_deleted IS NULL";
+            var list = DatabaseHelper.ExecuteQuery(sql, MapFromReader, new SqliteParameter("@id", id));
+            return list.Count > 0 ? list[0] : null;
+        }
         public static List<PartData> GetLowStockParts()
         {
             string sql = @"SELECT p.*, c.category_name, s.supplier_name

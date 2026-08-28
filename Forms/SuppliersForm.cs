@@ -431,77 +431,13 @@ namespace InventorySystem.Forms
             try
             {
                 SaveFileDialog saveDialog = new SaveFileDialog();
-                saveDialog.Filter = "CSV Files (*.csv)|*.csv";
-                saveDialog.FileName = $"Suppliers_Export_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
-                saveDialog.Title = "Export Suppliers to CSV";
-
-                if (saveDialog.ShowDialog() == DialogResult.OK)
-                {
-                    string sql = "SELECT supplier_name, 'Unknown' as contact_person, phone, email, address, '' as city, '' as postal_code, '' as website, '' as notes FROM suppliers WHERE date_deleted IS NULL ORDER BY supplier_name";
-                    DataTable dt = DatabaseHelper.ExecuteDataTable(sql);
-
-                    if (dt == null || dt.Rows.Count == 0)
-                    {
-                        MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_NoDataExport"));
-                        return;
-                    }
-
-                    DataTable exportDt = new DataTable();
-                    exportDt.Columns.Add("SupplierName");
-                    exportDt.Columns.Add("ContactPerson");
-                    exportDt.Columns.Add("Email");
-                    exportDt.Columns.Add("Phone");
-                    exportDt.Columns.Add("Address");
-                    exportDt.Columns.Add("City");
-                    exportDt.Columns.Add("PostalCode");
-                    exportDt.Columns.Add("Website");
-                    exportDt.Columns.Add("Notes");
-
-                    foreach (DataRow row in dt.Rows)
-                    {
-                        exportDt.Rows.Add(
-                            row["supplier_name"],
-                            row["contact_person"],
-                            row["email"],
-                            row["phone"],
-                            row["address"],
-                            row["city"],
-                            row["postal_code"],
-                            row["website"],
-                            row["notes"]
-                        );
-                    }
-
-                    if (Helpers.ImportExportHelper.ExportToCsv(exportDt, saveDialog.FileName))
-                    {
-                        string successMsg = string.Format(LocalizationManager.GetString("Msg_ExportSuppliersSuccess", "Exported {0} suppliers to CSV successfully!"), exportDt.Rows.Count);
-                        MessageHelper.ShowSuccess(successMsg);
-                    }
-                    else
-                    {
-                        MessageHelper.ShowError(LocalizationManager.GetString("Msg_ExportFailed"));
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageHelper.ShowError((LocalizationManager.GetString("Msg_ExportError")) + ex.Message);
-            }
-        }
-
-        private void ExportToExcel()
-        {
-            try
-            {
-                SaveFileDialog saveDialog = new SaveFileDialog();
-                saveDialog.Filter = "Excel Files (*.xlsx)|*.xlsx";
+                saveDialog.Filter = "Excel Files (*.xlsx)|*.xlsx|CSV Files (*.csv)|*.csv";
                 saveDialog.FileName = $"Suppliers_Export_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
-                saveDialog.Title = "Export Suppliers to Excel";
+                saveDialog.Title = "Export Suppliers";
 
                 if (saveDialog.ShowDialog() == DialogResult.OK)
                 {
-                    string sql = "SELECT supplier_name, 'Unknown' as contact_person, phone, email, address, '' as city, '' as postal_code, '' as website, '' as notes FROM suppliers WHERE date_deleted IS NULL ORDER BY supplier_name";
-                    DataTable dt = DatabaseHelper.ExecuteDataTable(sql);
+                    DataTable dt = Services.CsvImportExportService.BuildSuppliersExportTable();
 
                     if (dt == null || dt.Rows.Count == 0)
                     {
@@ -509,35 +445,12 @@ namespace InventorySystem.Forms
                         return;
                     }
 
-                    DataTable exportDt = new DataTable();
-                    exportDt.Columns.Add("SupplierName");
-                    exportDt.Columns.Add("ContactPerson");
-                    exportDt.Columns.Add("Email");
-                    exportDt.Columns.Add("Phone");
-                    exportDt.Columns.Add("Address");
-                    exportDt.Columns.Add("City");
-                    exportDt.Columns.Add("PostalCode");
-                    exportDt.Columns.Add("Website");
-                    exportDt.Columns.Add("Notes");
-
-                    foreach (DataRow row in dt.Rows)
+                    bool ok = saveDialog.FileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase)
+                        ? Helpers.ImportExportHelper.ExportToCsv(dt, saveDialog.FileName)
+                        : Helpers.ImportExportHelper.ExportToXlsx(dt, saveDialog.FileName, "Suppliers");
+                    if (ok)
                     {
-                        exportDt.Rows.Add(
-                            row["supplier_name"],
-                            row["contact_person"],
-                            row["email"],
-                            row["phone"],
-                            row["address"],
-                            row["city"],
-                            row["postal_code"],
-                            row["website"],
-                            row["notes"]
-                        );
-                    }
-
-                    if (Helpers.ImportExportHelper.ExportToExcel(exportDt, saveDialog.FileName, "Suppliers"))
-                    {
-                        string successMsg = string.Format(LocalizationManager.GetString("Msg_ExportExcelSuppliersSuccess", "Exported {0} suppliers to Excel successfully!"), exportDt.Rows.Count);
+                        string successMsg = string.Format(LocalizationManager.GetString("Msg_ExportSuppliersSuccess", "Exported {0} suppliers successfully!"), dt.Rows.Count);
                         MessageHelper.ShowSuccess(successMsg);
                     }
                     else
@@ -570,55 +483,15 @@ namespace InventorySystem.Forms
                         return;
                     }
 
-                    if (!dt.Columns.Contains("SupplierName"))
-                    {
-                        MessageHelper.ShowError(LocalizationManager.GetString("Error_InvalidSupplierFileFormat", "Invalid file format. Required columns: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes"));
-                        return;
-                    }
-
-                    int imported = 0;
-                    int skipped = 0;
-                    Services.SupplierService supplierService = new Services.SupplierService();
-
+                    var rowDicts = new System.Collections.Generic.List<System.Collections.Generic.Dictionary<string, string>>();
                     foreach (DataRow row in dt.Rows)
-                    {
-                        try
-                        {
-                            string supplierName = row["SupplierName"].ToString();
+                        rowDicts.Add(Services.CsvImportExportService.RowFromDataRow(row));
 
-                            if (string.IsNullOrWhiteSpace(supplierName))
-                            {
-                                skipped++;
-                                continue;
-                            }
-
-                            if (supplierService.SupplierExists(supplierName))
-                            {
-                                skipped++;
-                                continue;
-                            }
-
-                            supplierService.ImportSupplier(
-                                supplierName,
-                                row["ContactPerson"].ToString(),
-                                row["Email"].ToString(),
-                                row["Phone"].ToString(),
-                                row["Address"].ToString(),
-                                row["City"].ToString(),
-                                row["PostalCode"].ToString(),
-                                row["Website"].ToString(),
-                                row["Notes"].ToString()
-                            );
-                            imported++;
-                        }
-                        catch
-                        {
-                            skipped++;
-                        }
-                    }
-
+                    var result = Services.CsvImportExportService.ImportSuppliers(rowDicts);
                     LoadData();
-                    string completeMsg = string.Format(LocalizationManager.GetString("Msg_ImportCompleteResults", "Import complete!\nImported: {0}\nSkipped: {1}"), imported, skipped);
+                    string completeMsg = string.Format(
+                        LocalizationManager.GetString("Msg_ImportCompleteResults", "Import complete!\nImported: {0}\nUpdated: {1}\nSkipped: {2}"),
+                        result.Imported, result.Updated, result.Skipped);
                     MessageHelper.ShowSuccess(completeMsg);
                 }
             }
@@ -646,55 +519,15 @@ namespace InventorySystem.Forms
                         return;
                     }
 
-                    if (!dt.Columns.Contains("SupplierName"))
-                    {
-                        MessageHelper.ShowError(LocalizationManager.GetString("Error_InvalidSupplierFileFormat", "Invalid file format. Required columns: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes"));
-                        return;
-                    }
-
-                    int imported = 0;
-                    int skipped = 0;
-                    Services.SupplierService supplierService = new Services.SupplierService();
-
+                    var rowDicts = new System.Collections.Generic.List<System.Collections.Generic.Dictionary<string, string>>();
                     foreach (DataRow row in dt.Rows)
-                    {
-                        try
-                        {
-                            string supplierName = row["SupplierName"].ToString();
+                        rowDicts.Add(Services.CsvImportExportService.RowFromDataRow(row));
 
-                            if (string.IsNullOrWhiteSpace(supplierName))
-                            {
-                                skipped++;
-                                continue;
-                            }
-
-                            if (supplierService.SupplierExists(supplierName))
-                            {
-                                skipped++;
-                                continue;
-                            }
-
-                            supplierService.ImportSupplier(
-                                supplierName,
-                                row["ContactPerson"].ToString(),
-                                row["Email"].ToString(),
-                                row["Phone"].ToString(),
-                                row["Address"].ToString(),
-                                row["City"].ToString(),
-                                row["PostalCode"].ToString(),
-                                row["Website"].ToString(),
-                                row["Notes"].ToString()
-                            );
-                            imported++;
-                        }
-                        catch
-                        {
-                            skipped++;
-                        }
-                    }
-
+                    var result = Services.CsvImportExportService.ImportSuppliers(rowDicts);
                     LoadData();
-                    string completeMsg = string.Format(LocalizationManager.GetString("Msg_ImportCompleteResults", "Import complete!\nImported: {0}\nSkipped: {1}"), imported, skipped);
+                    string completeMsg = string.Format(
+                        LocalizationManager.GetString("Msg_ImportCompleteResults", "Import complete!\nImported: {0}\nUpdated: {1}\nSkipped: {2}"),
+                        result.Imported, result.Updated, result.Skipped);
                     MessageHelper.ShowSuccess(completeMsg);
                 }
             }

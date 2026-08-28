@@ -29,6 +29,12 @@ namespace InventorySystem
                 Environment.Exit(RunReportsSmokeTest());
                 return;
             }
+            if (args != null && args.Length > 0 &&
+                args.Any(a => string.Equals(a, "--test-export", StringComparison.OrdinalIgnoreCase)))
+            {
+                Environment.Exit(RunExportSmokeTest());
+                return;
+            }
 
             if (args != null && args.Length > 0 &&
                 args.Any(a => string.Equals(a, "--test-i18n", StringComparison.OrdinalIgnoreCase)))
@@ -233,6 +239,69 @@ namespace InventorySystem
                 AgentLog("H0", "Program.RunI18nSmokeTest", "exception", new Dictionary<string, object> { ["error"] = ex.Message });
                 Console.WriteLine("I18N SMOKE EXCEPTION: " + ex);
                 return 2;
+            }
+        }
+
+        /// <summary>
+        /// Writes every export workbook to Data/test-exports and prints the resulting column widths
+        /// so clipped columns can be spotted without opening Excel.
+        /// </summary>
+        private static int RunExportSmokeTest()
+        {
+            try
+            {
+                DatabaseInitializer.Initialize();
+                DatabaseHelper.EnsureSchema();
+                CurrencyService.EnsureTable();
+
+                string exportDir = Path.Combine(Application.StartupPath, "Data", "test-exports");
+                Directory.CreateDirectory(exportDir);
+
+                var reportRange = new ReportService().GetPresetRange("Yearly");
+                var sets = new (string Name, System.Data.DataTable Table)[]
+                {
+                    ("products", CsvImportExportService.BuildProductsExportTable()),
+                    ("customers", CsvImportExportService.BuildCustomersExportTable()),
+                    ("suppliers", CsvImportExportService.BuildSuppliersExportTable()),
+                    ("expenses", CsvImportExportService.BuildExpensesExportTable()),
+                    ("sales", CsvImportExportService.BuildSalesExportTable()),
+                    ("history", CsvImportExportService.BuildHistoryExportTable()),
+                    ("report-summary", CsvImportExportService.BuildReportSummaryExportTable(
+                        new ReportService().GetSummary(reportRange.from, reportRange.to))),
+                    ("report-products", CsvImportExportService.BuildReportProductsExportTable(
+                        reportRange.from, reportRange.to))
+                };
+
+                foreach (var (name, table) in sets)
+                {
+                    byte[] bytes = ImportExportHelper.ExportDataTableToXlsx(table, name);
+                    string path = Path.Combine(exportDir, name + ".xlsx");
+                    File.WriteAllBytes(path, bytes);
+                    Console.WriteLine($"[{name}] rows={table.Rows.Count} cols={table.Columns.Count} -> {path}");
+
+                    using var wb = new ClosedXML.Excel.XLWorkbook(path);
+                    var ws = wb.Worksheet(1);
+                    for (int c = 1; c <= table.Columns.Count; c++)
+                    {
+                        string header = table.Columns[c - 1].ColumnName;
+                        int longest = header.Length;
+                        foreach (System.Data.DataRow row in table.Rows)
+                        {
+                            int len = (row[c - 1]?.ToString() ?? "").Trim().Length;
+                            if (len > longest) longest = len;
+                        }
+                        string fmt = ws.Cell(2, c).Style.NumberFormat.Format;
+                        Console.WriteLine($"    {header,-24} longest={longest,4} width={ws.Column(c).Width,5:0.0}" +
+                            (string.IsNullOrEmpty(fmt) ? "" : $"  fmt={fmt}"));
+                    }
+                }
+
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine(ex);
+                return 1;
             }
         }
 
@@ -2039,6 +2108,251 @@ namespace InventorySystem
                     catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
                 });
 
+                // - Bulk CSV import (products, customers, suppliers, expenses) -
+                app.MapGet("/api/products/export", (string format, string includeInactive) =>
+                {
+                    try
+                    {
+                        bool showInactive = string.Equals(includeInactive, "1", StringComparison.OrdinalIgnoreCase)
+                            || string.Equals(includeInactive, "true", StringComparison.OrdinalIgnoreCase);
+                        var dt = CsvImportExportService.BuildProductsExportTable(showInactive);
+                        string stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                        if (string.Equals(format, "csv", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var bytes = ImportExportHelper.ExportDataTableToCsvBytes(dt);
+                            return Microsoft.AspNetCore.Http.Results.File(bytes, "text/csv", $"inventory_{stamp}.csv");
+                        }
+                        var xlsx = ImportExportHelper.ExportDataTableToXlsx(dt, "Inventory");
+                        return Microsoft.AspNetCore.Http.Results.File(xlsx,
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            $"inventory_{stamp}.xlsx");
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapGet("/api/customers/export", (string format) =>
+                {
+                    try
+                    {
+                        var dt = CsvImportExportService.BuildCustomersExportTable();
+                        string stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                        if (string.Equals(format, "csv", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var bytes = ImportExportHelper.ExportDataTableToCsvBytes(dt);
+                            return Microsoft.AspNetCore.Http.Results.File(bytes, "text/csv", $"customers_{stamp}.csv");
+                        }
+                        var xlsx = ImportExportHelper.ExportDataTableToXlsx(dt, "Customers");
+                        return Microsoft.AspNetCore.Http.Results.File(xlsx,
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            $"customers_{stamp}.xlsx");
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapGet("/api/suppliers/export", (string format) =>
+                {
+                    try
+                    {
+                        var dt = CsvImportExportService.BuildSuppliersExportTable();
+                        string stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                        if (string.Equals(format, "csv", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var bytes = ImportExportHelper.ExportDataTableToCsvBytes(dt);
+                            return Microsoft.AspNetCore.Http.Results.File(bytes, "text/csv", $"suppliers_{stamp}.csv");
+                        }
+                        var xlsx = ImportExportHelper.ExportDataTableToXlsx(dt, "Suppliers");
+                        return Microsoft.AspNetCore.Http.Results.File(xlsx,
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            $"suppliers_{stamp}.xlsx");
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapGet("/api/expenses/export", (string format) =>
+                {
+                    try
+                    {
+                        var dt = CsvImportExportService.BuildExpensesExportTable();
+                        string stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                        if (string.Equals(format, "csv", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var bytes = ImportExportHelper.ExportDataTableToCsvBytes(dt);
+                            return Microsoft.AspNetCore.Http.Results.File(bytes, "text/csv", $"expenses_{stamp}.csv");
+                        }
+                        var xlsx = ImportExportHelper.ExportDataTableToXlsx(dt, "Expenses");
+                        return Microsoft.AspNetCore.Http.Results.File(xlsx,
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            $"expenses_{stamp}.xlsx");
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapGet("/api/sales/export", (string format) =>
+                {
+                    try
+                    {
+                        var dt = CsvImportExportService.BuildSalesExportTable();
+                        string stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                        if (string.Equals(format, "csv", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var bytes = ImportExportHelper.ExportDataTableToCsvBytes(dt);
+                            return Microsoft.AspNetCore.Http.Results.File(bytes, "text/csv", $"sales_{stamp}.csv");
+                        }
+                        var xlsx = ImportExportHelper.ExportDataTableToXlsx(dt, "Sales");
+                        return Microsoft.AspNetCore.Http.Results.File(xlsx,
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            $"sales_{stamp}.xlsx");
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapGet("/api/history/export", (string format) =>
+                {
+                    try
+                    {
+                        var dt = CsvImportExportService.BuildHistoryExportTable();
+                        string stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                        if (string.Equals(format, "csv", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var bytes = ImportExportHelper.ExportDataTableToCsvBytes(dt);
+                            return Microsoft.AspNetCore.Http.Results.File(bytes, "text/csv", $"history_{stamp}.csv");
+                        }
+                        var xlsx = ImportExportHelper.ExportDataTableToXlsx(dt, "History");
+                        return Microsoft.AspNetCore.Http.Results.File(xlsx,
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            $"history_{stamp}.xlsx");
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // Reports export ships two sheets: the headline metrics and the sold-products detail.
+                app.MapGet("/api/reports/export", (string format, string from, string to) =>
+                {
+                    try
+                    {
+                        var svc = new ReportService();
+                        DateTime fromDate = DateTime.TryParse(from, out var f) ? f.Date : DateTime.Today;
+                        DateTime toDate = DateTime.TryParse(to, out var t) ? t.Date : DateTime.Today;
+                        if (toDate < fromDate) (fromDate, toDate) = (toDate, fromDate);
+
+                        var summary = svc.GetSummary(fromDate, toDate);
+                        var summaryTable = CsvImportExportService.BuildReportSummaryExportTable(summary);
+                        var productsTable = CsvImportExportService.BuildReportProductsExportTable(fromDate, toDate);
+
+                        string stamp = $"{fromDate:yyyyMMdd}_{toDate:yyyyMMdd}";
+                        if (string.Equals(format, "csv", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var bytes = ImportExportHelper.ExportDataTableToCsvBytes(productsTable);
+                            return Microsoft.AspNetCore.Http.Results.File(bytes, "text/csv", $"report_{stamp}.csv");
+                        }
+
+                        var xlsx = ImportExportHelper.ExportTablesToXlsx(new[]
+                        {
+                            ("Summary", summaryTable),
+                            ("Sold Products", productsTable)
+                        });
+                        return Microsoft.AspNetCore.Http.Results.File(xlsx,
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            $"report_{stamp}.xlsx");
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/products/import", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var payload = await System.Text.Json.JsonSerializer.DeserializeAsync<BulkCsvImportPayload>(
+                            request.Body, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (payload?.Rows == null || payload.Rows.Count == 0)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "No rows" });
+
+                        var result = CsvImportExportService.ImportProducts(payload.Rows);
+                        if (result.Imported + result.Updated > 0)
+                            _ = InventoryBroadcaster.Broadcast("InventoryChanged", "CSV import completed");
+                        return Microsoft.AspNetCore.Http.Results.Ok(new
+                        {
+                            success = true,
+                            imported = result.Imported,
+                            updated = result.Updated,
+                            skipped = result.Skipped,
+                            errors = result.Errors.Take(20).ToList()
+                        });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/customers/import", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var payload = await System.Text.Json.JsonSerializer.DeserializeAsync<BulkCsvImportPayload>(
+                            request.Body, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (payload?.Rows == null || payload.Rows.Count == 0)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "No rows" });
+
+                        var result = CsvImportExportService.ImportCustomers(payload.Rows);
+                        if (result.Imported + result.Updated > 0)
+                            GlobalEvents.RaiseCustomersUpdated();
+                        return Microsoft.AspNetCore.Http.Results.Ok(new
+                        {
+                            success = true,
+                            imported = result.Imported,
+                            updated = result.Updated,
+                            skipped = result.Skipped,
+                            errors = result.Errors.Take(20).ToList()
+                        });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/suppliers/import", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var payload = await System.Text.Json.JsonSerializer.DeserializeAsync<BulkCsvImportPayload>(
+                            request.Body, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (payload?.Rows == null || payload.Rows.Count == 0)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "No rows" });
+
+                        var result = CsvImportExportService.ImportSuppliers(payload.Rows);
+                        if (result.Imported + result.Updated > 0)
+                            GlobalEvents.RaiseSuppliersUpdated();
+                        return Microsoft.AspNetCore.Http.Results.Ok(new
+                        {
+                            success = true,
+                            imported = result.Imported,
+                            updated = result.Updated,
+                            skipped = result.Skipped,
+                            errors = result.Errors.Take(20).ToList()
+                        });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/expenses/import", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var payload = await System.Text.Json.JsonSerializer.DeserializeAsync<BulkCsvImportPayload>(
+                            request.Body, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (payload?.Rows == null || payload.Rows.Count == 0)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "No rows" });
+
+                        string user = payload.RecordedBy ?? "Web";
+                        var result = CsvImportExportService.ImportExpenses(payload.Rows, user);
+                        return Microsoft.AspNetCore.Http.Results.Ok(new
+                        {
+                            success = true,
+                            imported = result.Imported,
+                            updated = result.Updated,
+                            skipped = result.Skipped,
+                            errors = result.Errors.Take(20).ToList()
+                        });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
                 // - Sales / History / Reports CSV import -
                 app.MapPost("/api/sales/import", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
                 {
@@ -3119,6 +3433,13 @@ namespace InventorySystem
             public string RecordedBy { get; set; }
             public bool IsPaid { get; set; }
             public bool IsRecurring { get; set; }
+        }
+
+        private class BulkCsvImportPayload
+        {
+            public System.Collections.Generic.List<System.Collections.Generic.Dictionary<string, string>> Rows { get; set; }
+            public System.Collections.Generic.List<string> Headers { get; set; }
+            public string RecordedBy { get; set; }
         }
 
         private class SaleImportRow

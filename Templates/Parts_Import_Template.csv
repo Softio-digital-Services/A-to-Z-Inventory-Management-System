@@ -1,6 +1,3 @@
-PartNumber,PartName,Category,Quantity,MinimumStock,UnitPrice,Location,Status
-P001,Brake Pad Set,Brakes,50,10,45.99,A1-Shelf2,Active
-P002,Oil Filter,Filters,100,20,8.99,B2-Shelf1,Active
-P003,Air Filter,Filters,75,15,12.50,B2-Shelf2,Active
-P004,Spark Plug Set,Ignition,60,10,25.00,C1-Shelf1,Active
-P005,Windshield Wiper Blades,Accessories,40,8,18.75,D3-Shelf3,Active
+part_number,part_name,description,category_name,supplier_id,supplier_name,quantity_in_stock,selling_price,purchase_price,minimum_stock_level,reorder_quantity,location,shelf,barcode,unit_of_measure,batch_number,expiry_date,item_type,is_sales_item,is_purchase_item,is_inactive,tax_rate,is_stock_tracked,sell_by_weight,price2,price3,price4,part_image,status
+P001,Brake Pad Set,Front brake pads,Brakes,,AutoParts Wholesale Inc,50,45.99,30.00,10,5,A1,B2,1234567890123,pcs,,,Product,1,1,0,0,1,0,0,0,0,,Active
+P002,Fresh Apples,Red apples per kg,Produce,,Local Farm,100,2.50,1.20,20,10,C3,S1,1234567890124,kg,,,Product,1,1,0,0,1,1,0,0,0,,Active

@@ -488,14 +488,13 @@ namespace InventorySystem.Forms
             try
             {
                 SaveFileDialog saveDialog = new SaveFileDialog();
-                saveDialog.Filter = "CSV Files (*.csv)|*.csv";
-                saveDialog.FileName = $"Customers_Export_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
-                saveDialog.Title = "Export Customers to CSV";
+                saveDialog.Filter = "Excel Files (*.xlsx)|*.xlsx|CSV Files (*.csv)|*.csv";
+                saveDialog.FileName = $"Customers_Export_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                saveDialog.Title = "Export Customers";
 
                 if (saveDialog.ShowDialog() == DialogResult.OK)
                 {
-                    string sql = "SELECT full_name as CustomerName, phone as Phone, email as Email, address as Address, type as CustomerType, current_balance as Balance, credit_limit as CreditLimit FROM customers WHERE date_deleted IS NULL ORDER BY full_name";
-                    DataTable dt = DatabaseHelper.ExecuteDataTable(sql);
+                    DataTable dt = Services.CsvImportExportService.BuildCustomersExportTable();
 
                     if (dt == null || dt.Rows.Count == 0)
                     {
@@ -503,10 +502,13 @@ namespace InventorySystem.Forms
                         return;
                     }
 
-                    if (Helpers.ImportExportHelper.ExportToCsv(dt, saveDialog.FileName))
+                    bool ok = saveDialog.FileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase)
+                        ? Helpers.ImportExportHelper.ExportToCsv(dt, saveDialog.FileName)
+                        : Helpers.ImportExportHelper.ExportToXlsx(dt, saveDialog.FileName, "Customers");
+                    if (ok)
                     {
                         string successMsg = string.Format(
-                            LocalizationManager.GetString("CustForm_ExportSuccess", "Exported {0} customers to CSV successfully!"),
+                            LocalizationManager.GetString("CustForm_ExportSuccess", "Exported {0} customers successfully!"),
                             dt.Rows.Count
                         );
                         MessageHelper.ShowSuccess(successMsg);
@@ -541,64 +543,17 @@ namespace InventorySystem.Forms
                         return;
                     }
 
-                    if (!dt.Columns.Contains("CustomerName"))
-                    {
-                        MessageHelper.ShowError(LocalizationManager.GetString("CustForm_InvalidFileFormat", "Invalid file format. Required columns: CustomerName, Phone, Email, Address, CustomerType"));
-                        return;
-                    }
-
-                    int imported = 0;
-                    int skipped = 0;
-
+                    var rowDicts = new System.Collections.Generic.List<System.Collections.Generic.Dictionary<string, string>>();
                     foreach (DataRow row in dt.Rows)
-                    {
-                        try
-                        {
-                            string custName = row.Table.Columns.Contains("CustomerName") ? row["CustomerName"].ToString() : "";
+                        rowDicts.Add(Services.CsvImportExportService.RowFromDataRow(row));
 
-                            if (string.IsNullOrWhiteSpace(custName))
-                            {
-                                skipped++;
-                                continue;
-                            }
-
-                            string checkSql = "SELECT COUNT(*) FROM customers WHERE full_name = @n AND date_deleted IS NULL";
-                            int count = DatabaseHelper.ExecuteScalar<int>(checkSql, new Microsoft.Data.Sqlite.SqliteParameter("@n", custName));
-
-                            if (count > 0)
-                            {
-                                skipped++;
-                                continue;
-                            }
-
-                            string phone = row.Table.Columns.Contains("Phone") ? row["Phone"].ToString() : "";
-                            string email = row.Table.Columns.Contains("Email") ? row["Email"].ToString() : "";
-                            string address = row.Table.Columns.Contains("Address") ? row["Address"].ToString() : "";
-                            string type = row.Table.Columns.Contains("CustomerType") ? row["CustomerType"].ToString() : "Individual";
-
-                            string sql = "INSERT INTO customers (full_name, phone, email, address, type, current_balance, date_added) " +
-                                         "VALUES (@name, @phone, @email, @addr, @type, 0, datetime('now'))";
-
-                            DatabaseHelper.ExecuteNonQuery(sql,
-                                new Microsoft.Data.Sqlite.SqliteParameter("@name", custName),
-                                new Microsoft.Data.Sqlite.SqliteParameter("@phone", phone),
-                                new Microsoft.Data.Sqlite.SqliteParameter("@email", email),
-                                new Microsoft.Data.Sqlite.SqliteParameter("@addr", address),
-                                new Microsoft.Data.Sqlite.SqliteParameter("@type", type));
-
-                            imported++;
-                        }
-                        catch
-                        {
-                            skipped++;
-                        }
-                    }
-
+                    var result = Services.CsvImportExportService.ImportCustomers(rowDicts);
                     LoadData();
                     string completeMsg = string.Format(
-                        LocalizationManager.GetString("Msg_ImportCompleteResults", "Import complete!\nImported: {0}\nSkipped: {1}"),
-                        imported,
-                        skipped
+                        LocalizationManager.GetString("Msg_ImportCompleteResults", "Import complete!\nImported: {0}\nUpdated: {1}\nSkipped: {2}"),
+                        result.Imported,
+                        result.Updated,
+                        result.Skipped
                     );
                     MessageHelper.ShowSuccess(completeMsg);
                 }

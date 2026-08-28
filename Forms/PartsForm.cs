@@ -1555,24 +1555,25 @@ namespace InventorySystem.Forms
         {
             try
             {
-                SaveFileDialog dlg = new SaveFileDialog { Filter = "CSV Files (*.csv)|*.csv", FileName = $"Items_Export_{DateTime.Now:yyyyMMdd_HHmmss}.csv", Title = "Export Items to CSV" };
+                SaveFileDialog dlg = new SaveFileDialog { Filter = "Excel Files (*.xlsx)|*.xlsx|CSV Files (*.csv)|*.csv", FileName = $"Items_Export_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx", Title = "Export Items" };
                 if (dlg.ShowDialog() != DialogResult.OK) return;
                 DataTable dt = _inventoryService.GetAllParts(_searchText, _lowStockOnly, _activeOnly, _activeCategory);
                 if (dt == null || dt.Rows.Count == 0) { MessageHelper.ShowWarning("No data to export."); return; }
-                
-                // Keep the exact same columns as the actual database query
+
                 DataTable exportDt = dt.Copy();
-                
-                // Clear any inherited constraints (like Primary Key on part_id) so we can remove columns
                 exportDt.PrimaryKey = null;
                 exportDt.Constraints.Clear();
 
-                // We can just remove 'part_id' or keep it. Let's remove part_id and part_image so we export raw data cleanly.
                 if (exportDt.Columns.Contains("part_id")) exportDt.Columns.Remove("part_id");
-                if (exportDt.Columns.Contains("part_image")) exportDt.Columns.Remove("part_image");
 
-                if (Helpers.ImportExportHelper.ExportToCsv(exportDt, dlg.FileName))
-                    MessageHelper.ShowSuccess($"Exported {exportDt.Rows.Count} items to CSV successfully!");
+                Helpers.ImportExportHelper.MarkCurrencyColumns(exportDt,
+                    "selling_price", "purchase_price", "price2", "price3", "price4");
+
+                bool ok = dlg.FileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase)
+                    ? Helpers.ImportExportHelper.ExportToCsv(exportDt, dlg.FileName)
+                    : Helpers.ImportExportHelper.ExportToXlsx(exportDt, dlg.FileName, "Inventory");
+                if (ok)
+                    MessageHelper.ShowSuccess($"Exported {exportDt.Rows.Count} items successfully!");
                 else
                     MessageHelper.ShowError("Failed to export data.");
             }
