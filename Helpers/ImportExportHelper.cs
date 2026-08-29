@@ -414,6 +414,16 @@ namespace InventorySystem.Helpers
             }
 
             AutoFitWorksheetColumns(ws, table);
+            ApplyExportCenterAlignment(ws, 1, Math.Max(1, table.Rows.Count + 1), 1, colCount);
+        }
+
+        /// <summary>Centers header + data horizontally and vertically in export sheets.</summary>
+        private static void ApplyExportCenterAlignment(IXLWorksheet ws, int firstRow, int lastRow, int firstCol, int lastCol)
+        {
+            if (ws == null || lastRow < firstRow || lastCol < firstCol) return;
+            var range = ws.Range(firstRow, firstCol, lastRow, lastCol);
+            range.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            range.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
         }
 
         private static void SetExportCellValue(IXLCell cell, object val)
@@ -541,6 +551,8 @@ namespace InventorySystem.Helpers
                 ws.Column(c).Style.Alignment.WrapText = false;
                 ws.Column(c).Style.Alignment.ShrinkToFit = false;
             }
+
+            ApplyExportCenterAlignment(ws, firstRow, lastRow, firstCol, lastCol);
         }
 
         private static int ExportCellDisplayLength(object val, string numberFormat = null)
